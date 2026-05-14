@@ -85,10 +85,6 @@ jobs:
             SENTRY_ORG=${{ secrets.SENTRY_ORG }}
             SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
             SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
-            SPREE_WEBHOOK_SECRET=${{ secrets.SPREE_WEBHOOK_SECRET }}
-            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-            EMAIL_FROM=${{ secrets.EMAIL_FROM }}
-            SENTRY_SEND_DEFAULT_PII=${{ secrets.SENTRY_SEND_DEFAULT_PII }}
           cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:buildcache
           cache-to: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:buildcache,mode=max,image-manifest=true
           platforms: linux/amd64
