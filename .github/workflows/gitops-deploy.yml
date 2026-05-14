@@ -59,21 +59,36 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:${{ steps.set-tag.outputs.tag }}
             ${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:latest
           build-args: |
-            SPREE_API_URL=${{ secrets.SPREE_API_URL }}
-            SPREE_PUBLISHABLE_KEY=${{ secrets.SPREE_PUBLISHABLE_KEY }}
-            GTM_ID=${{ secrets.GTM_ID }}
-            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
-            SENTRY_ORG=${{ secrets.SENTRY_ORG }}
-            SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
-            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
-            SPREE_WEBHOOK_SECRET=${{ secrets.SPREE_WEBHOOK_SECRET }}
-            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-            EMAIL_FROM=${{ secrets.EMAIL_FROM }}
-            SENTRY_SEND_DEFAULT_PII=${{ secrets.SENTRY_SEND_DEFAULT_PII }}
+            SPREE_API_URL=${{ vars.SPREE_API_URL }}
+            GTM_ID=${{ vars.GTM_ID }}
+            SENTRY_DSN=${{ vars.SENTRY_DSN }}
+            SENTRY_ORG=${{ vars.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ vars.SENTRY_PROJECT }}
+            SENTRY_SEND_DEFAULT_PII=${{ vars.SENTRY_SEND_DEFAULT_PII }}
             NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_DEFAULT_COUNTRY=${{ vars.NEXT_PUBLIC_DEFAULT_COUNTRY }}
             NEXT_PUBLIC_DEFAULT_LOCALE=${{ vars.NEXT_PUBLIC_DEFAULT_LOCALE }}
+            NEXT_PUBLIC_STORE_NAME=${{ vars.NEXT_PUBLIC_STORE_NAME }}
+            NEXT_PUBLIC_STORE_DESCRIPTION=${{ vars.NEXT_PUBLIC_STORE_DESCRIPTION }}
+            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ vars.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}
+            NEXT_PUBLIC_ADYEN_CLIENT_KEY=${{ vars.NEXT_PUBLIC_ADYEN_CLIENT_KEY }}
+            NEXT_PUBLIC_ADYEN_ENVIRONMENT=${{ vars.NEXT_PUBLIC_ADYEN_ENVIRONMENT }}
             NEXT_PUBLIC_SENTRY_SEND_DEFAULT_PII=${{ vars.NEXT_PUBLIC_SENTRY_SEND_DEFAULT_PII }}
+            STORE_SEO_TITLE=${{ vars.STORE_SEO_TITLE }}
+            STORE_META_DESCRIPTION=${{ vars.STORE_META_DESCRIPTION }}
+            STORE_META_KEYWORDS=${{ vars.STORE_META_KEYWORDS }}
+            STORE_TWITTER=${{ vars.STORE_TWITTER }}
+            STORE_FACEBOOK=${{ vars.STORE_FACEBOOK }}
+            STORE_INSTAGRAM=${{ vars.STORE_INSTAGRAM }}
+            STORE_LOGO_URL=${{ vars.STORE_LOGO_URL }}
+            STORE_SUPPORT_EMAIL=${{ vars.STORE_SUPPORT_EMAIL }}
+            EMAIL_FROM=${{ vars.EMAIL_FROM }}
+          secrets: |
+            SPREE_PUBLISHABLE_KEY=${{ secrets.SPREE_PUBLISHABLE_KEY }}
+            SPREE_WEBHOOK_SECRET=${{ secrets.SPREE_WEBHOOK_SECRET }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:buildcache
           cache-to: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:buildcache,mode=max,image-manifest=true
           platforms: linux/amd64
