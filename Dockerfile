@@ -13,12 +13,6 @@ WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-ARG SPREE_API_URL
-ARG GTM_ID
-ARG SENTRY_DSN
-ARG SENTRY_ORG
-ARG SENTRY_PROJECT
-ARG SENTRY_SEND_DEFAULT_PII=false
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_DEFAULT_COUNTRY=us
 ARG NEXT_PUBLIC_DEFAULT_LOCALE=en
@@ -37,15 +31,8 @@ ARG STORE_FACEBOOK
 ARG STORE_INSTAGRAM
 ARG STORE_LOGO_URL
 ARG STORE_SUPPORT_EMAIL
-ARG EMAIL_FROM
 
-ENV SPREE_API_URL=${SPREE_API_URL} \
-    GTM_ID=${GTM_ID} \
-    SENTRY_DSN=${SENTRY_DSN} \
-    SENTRY_ORG=${SENTRY_ORG} \
-    SENTRY_PROJECT=${SENTRY_PROJECT} \
-    SENTRY_SEND_DEFAULT_PII=${SENTRY_SEND_DEFAULT_PII} \
-    NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
     NEXT_PUBLIC_DEFAULT_COUNTRY=${NEXT_PUBLIC_DEFAULT_COUNTRY} \
     NEXT_PUBLIC_DEFAULT_LOCALE=${NEXT_PUBLIC_DEFAULT_LOCALE} \
     NEXT_PUBLIC_STORE_NAME=${NEXT_PUBLIC_STORE_NAME} \
@@ -68,14 +55,28 @@ ENV SPREE_API_URL=${SPREE_API_URL} \
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN --mount=type=secret,id=SPREE_PUBLISHABLE_KEY \
+RUN --mount=type=secret,id=SPREE_API_URL \
+    --mount=type=secret,id=SPREE_PUBLISHABLE_KEY \
+    --mount=type=secret,id=GTM_ID \
+    --mount=type=secret,id=SENTRY_DSN \
+    --mount=type=secret,id=SENTRY_ORG \
+    --mount=type=secret,id=SENTRY_PROJECT \
+    --mount=type=secret,id=SENTRY_AUTH_TOKEN \
     --mount=type=secret,id=SPREE_WEBHOOK_SECRET \
     --mount=type=secret,id=RESEND_API_KEY \
-    --mount=type=secret,id=SENTRY_AUTH_TOKEN \
+    --mount=type=secret,id=EMAIL_FROM \
+    --mount=type=secret,id=SENTRY_SEND_DEFAULT_PII \
+    export SPREE_API_URL="$(cat /run/secrets/SPREE_API_URL 2>/dev/null || true)" && \
     export SPREE_PUBLISHABLE_KEY="$(cat /run/secrets/SPREE_PUBLISHABLE_KEY 2>/dev/null || true)" && \
+    export GTM_ID="$(cat /run/secrets/GTM_ID 2>/dev/null || true)" && \
+    export SENTRY_DSN="$(cat /run/secrets/SENTRY_DSN 2>/dev/null || true)" && \
+    export SENTRY_ORG="$(cat /run/secrets/SENTRY_ORG 2>/dev/null || true)" && \
+    export SENTRY_PROJECT="$(cat /run/secrets/SENTRY_PROJECT 2>/dev/null || true)" && \
+    export SENTRY_AUTH_TOKEN="$(cat /run/secrets/SENTRY_AUTH_TOKEN 2>/dev/null || true)" && \
     export SPREE_WEBHOOK_SECRET="$(cat /run/secrets/SPREE_WEBHOOK_SECRET 2>/dev/null || true)" && \
     export RESEND_API_KEY="$(cat /run/secrets/RESEND_API_KEY 2>/dev/null || true)" && \
-    export SENTRY_AUTH_TOKEN="$(cat /run/secrets/SENTRY_AUTH_TOKEN 2>/dev/null || true)" && \
+    export EMAIL_FROM="$(cat /run/secrets/EMAIL_FROM 2>/dev/null || true)" && \
+    export SENTRY_SEND_DEFAULT_PII="$(cat /run/secrets/SENTRY_SEND_DEFAULT_PII 2>/dev/null || true)" && \
     npm run build
 
 FROM node:20-alpine AS runner
