@@ -1,0 +1,74 @@
+name: Build Image and Push to ECR
+
+on:
+  push:
+    tags:
+      - 'dev-v*.*.*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: eu-central-1
+  DEV_ECR_REPOSITORY: sleeve/dev/storefront
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: development
+    outputs:
+      image_tag: ${{ steps.set-tag.outputs.tag }}
+      ecr_repository: ${{ steps.set-tag.outputs.ecr_repository }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract tag
+        id: set-tag
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          if [[ "$TAG" =~ ^dev-v[0-9]+.[0-9]+.[0-9]+$ ]]; then
+            ECR_REPOSITORY="${DEV_ECR_REPOSITORY}"
+          else
+            echo "Tag $TAG is not a semantic dev tag. Expected dev-vX.Y.Z"
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "ecr_repository=$ECR_REPOSITORY" >> "$GITHUB_OUTPUT"
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ECR_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ECR_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:${{ steps.set-tag.outputs.tag }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:latest
+          build-args: |
+            SPREE_API_URL=${{ secrets.SPREE_API_URL }}
+            SPREE_PUBLISHABLE_KEY=${{ secrets.SPREE_PUBLISHABLE_KEY }}
+            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+            SENTRY_ORG=${{ secrets.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_DEFAULT_COUNTRY=${{ vars.NEXT_PUBLIC_DEFAULT_COUNTRY }}
+            NEXT_PUBLIC_DEFAULT_LOCALE=${{ vars.NEXT_PUBLIC_DEFAULT_LOCALE }}
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
+          cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:buildcache
+          cache-to: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:buildcache,mode=max,image-manifest=true
+          platforms: linux/amd64
