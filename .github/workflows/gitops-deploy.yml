@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'dev-v*.*.*'
+      - 'stg-v*.*.*'
+      - 'prd-v*.*.*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,11 +14,13 @@ concurrency:
 env:
   AWS_REGION: eu-central-1
   DEV_ECR_REPOSITORY: sleeve/dev/storefront
+  STG_ECR_REPOSITORY: sleeve/stg/storefront
+  PRD_ECR_REPOSITORY: sleeve/prd/storefront
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    environment: development
+    environment: ${{ startsWith(github.ref, 'refs/tags/prd-v') && 'production' || startsWith(github.ref, 'refs/tags/stg-v') && 'staging' || 'development' }}
     outputs:
       image_tag: ${{ steps.set-tag.outputs.tag }}
       ecr_repository: ${{ steps.set-tag.outputs.ecr_repository }}
@@ -30,8 +34,12 @@ jobs:
           TAG=${GITHUB_REF#refs/tags/}
           if [[ "$TAG" =~ ^dev-v[0-9]+.[0-9]+.[0-9]+$ ]]; then
             ECR_REPOSITORY="${DEV_ECR_REPOSITORY}"
+          elif [[ "$TAG" =~ ^stg-v[0-9]+.[0-9]+.[0-9]+$ ]]; then
+            ECR_REPOSITORY="${STG_ECR_REPOSITORY}"
+          elif [[ "$TAG" =~ ^prd-v[0-9]+.[0-9]+.[0-9]+$ ]]; then
+            ECR_REPOSITORY="${PRD_ECR_REPOSITORY}"
           else
-            echo "Tag $TAG is not a semantic dev tag. Expected dev-vX.Y.Z"
+            echo "Tag $TAG is not a semantic env tag. Expected dev-vX.Y.Z, stg-vX.Y.Z, or prd-vX.Y.Z"
             exit 1
           fi
 
