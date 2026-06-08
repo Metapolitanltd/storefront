@@ -6,7 +6,13 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  allowedDevOrigins: ["shop.lvh.me", "*.trycloudflare.com", "192.168.33.13"],
+  allowedDevOrigins: [
+    "shop.lvh.me",
+    "*.trycloudflare.com",
+    "192.168.33.13",
+    "spree-web-nz3i.onrender.com",
+    "qa-spree-web.onrender.com",
+  ],
   env: {
     NEXT_PUBLIC_SENTRY_DSN: process.env.SENTRY_DSN || "",
   },
@@ -39,6 +45,16 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "localhost",
+        pathname: "/rails/active_storage/**",
+      },
+      {
+        protocol: "https",
+        hostname: "spree-web-nz3i.onrender.com",
+        pathname: "/rails/active_storage/**",
+      },
+      {
+        protocol: "https",
+        hostname: "qa-spree-web.onrender.com",
         pathname: "/rails/active_storage/**",
       },
       {
