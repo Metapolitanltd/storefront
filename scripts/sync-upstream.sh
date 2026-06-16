@@ -58,9 +58,35 @@ if [[ -n "$(git status --porcelain)" ]]; then
 fi
 
 ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+
+# Print resolution guidance and exit, LEAVING the rebase in progress so that
+# `git status` / `git diff` show the conflicts for you to resolve. We never
+# auto-abort a rebase — that would discard the conflict state you need to see.
+rebase_conflict() {
+  local branch="$1"
+  echo
+  die "Rebase of '${branch}' hit conflicts. The rebase is still in progress on '${branch}'.
+
+  Resolve it:
+    git status                 # see conflicted files
+    git diff                   # inspect the conflicts
+    # ...edit files, then...
+    git add <files>
+    git rebase --continue      # repeat until the rebase finishes
+
+  Or bail out and return to where you were:
+    git rebase --abort
+    git checkout ${ORIGINAL_BRANCH}
+
+  Once '${branch}' is clean, re-run this script to finish the remaining branches."
+}
+
+# Only return to the starting branch when the tree is clean (no rebase in
+# progress, no leftover conflicts). Never aborts anything.
 restore() {
-  # Best-effort return to the branch you started on.
-  git rebase --abort >/dev/null 2>&1 || true
+  [[ -d "$(git rev-parse --git-path rebase-merge 2>/dev/null)" ]] && return 0
+  [[ -d "$(git rev-parse --git-path rebase-apply 2>/dev/null)" ]] && return 0
+  [[ -n "$(git status --porcelain 2>/dev/null)" ]] && return 0
   if [[ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" != "$ORIGINAL_BRANCH" ]]; then
     git checkout "$ORIGINAL_BRANCH" >/dev/null 2>&1 || true
   fi
@@ -76,7 +102,7 @@ ok "Fetched ${UPSTREAM_REMOTE}."
 info "Rebasing ${MAIN_BRANCH} onto ${UPSTREAM_REMOTE}/${MAIN_BRANCH}..."
 git checkout "$MAIN_BRANCH"
 if ! git rebase "${UPSTREAM_REMOTE}/${MAIN_BRANCH}"; then
-  die "Rebase of ${MAIN_BRANCH} hit conflicts. Resolve them, run 'git rebase --continue', then re-run with --push if needed."
+  rebase_conflict "$MAIN_BRANCH"
 fi
 ok "${MAIN_BRANCH} is up to date with ${UPSTREAM_REMOTE}/${MAIN_BRANCH}."
 
@@ -89,7 +115,7 @@ for branch in "${DOWNSTREAM_BRANCHES[@]}"; do
   info "Rebasing ${branch} onto ${MAIN_BRANCH}..."
   git checkout "$branch"
   if ! git rebase "$MAIN_BRANCH"; then
-    die "Rebase of ${branch} hit conflicts. Resolve them, run 'git rebase --continue', then re-run with --push if needed."
+    rebase_conflict "$branch"
   fi
   ok "${branch} rebased onto ${MAIN_BRANCH}."
 done
