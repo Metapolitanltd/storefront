@@ -216,6 +216,13 @@ export function MobileMenu({
               >
                 {t("allProducts")}
               </Link>
+              <Link
+                href={`${basePath}/vendors`}
+                onClick={() => setOpen(false)}
+                className={linkClass}
+              >
+                {t("vendors")}
+              </Link>
               {rootCategories.map((category) =>
                 category.children && category.children.length > 0 ? (
                   <button

@@ -41,6 +41,7 @@
     "openSearch": "Open search",
     "closeSearch": "Close search",
     "myAccount": "My Account",
+    "vendors": "Vendors",
     "wholesale": "Wholesale"
   },
   "regionPreferences": {
@@ -67,6 +68,7 @@
     "policies": "Policies",
     "poweredBy": "Powered by",
     "copyright": "© {year} {storeName}. Powered by Spree Commerce.",
+    "vendors": "Vendors",
     "wholesale": "Trade & Wholesale"
   },
   "home": {
@@ -548,6 +550,14 @@
     "shipping": "Shipping",
     "finalizingPayment": "Finalizing your payment...",
     "or": "or"
+  },
+  "vendors": {
+    "title": "Vendors",
+    "subtitle": "Browse the vendors in our marketplace",
+    "noVendors": "No vendors found",
+    "products": "Products",
+    "noProducts": "This vendor hasn't listed any products yet",
+    "backToVendors": "All vendors"
   },
   "wholesale": {
     "portalTitle": "Wholesale Portal",

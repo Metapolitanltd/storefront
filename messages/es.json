@@ -41,6 +41,7 @@
     "openSearch": "Abrir busqueda",
     "closeSearch": "Cerrar busqueda",
     "myAccount": "Mi cuenta",
+    "vendors": "Vendedores",
     "wholesale": "Mayorista"
   },
   "regionPreferences": {
@@ -67,6 +68,7 @@
     "policies": "Politicas",
     "poweredBy": "Impulsado por",
     "copyright": "© {year} {storeName}. Impulsado por Spree Commerce.",
+    "vendors": "Vendedores",
     "wholesale": "Comercio y venta al por mayor"
   },
   "home": {
@@ -548,6 +550,14 @@
     "shipping": "Envio",
     "finalizingPayment": "Finalizando tu pago...",
     "or": "o"
+  },
+  "vendors": {
+    "title": "Vendedores",
+    "subtitle": "Explora los vendedores de nuestro mercado",
+    "noVendors": "No se encontraron vendedores",
+    "products": "Productos",
+    "noProducts": "Este vendedor aún no ha publicado ningún producto",
+    "backToVendors": "Todos los vendedores"
   },
   "wholesale": {
     "portalTitle": "Portal mayorista",

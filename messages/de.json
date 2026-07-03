@@ -41,6 +41,7 @@
     "openSearch": "Suche öffnen",
     "closeSearch": "Suche schließen",
     "myAccount": "Mein Konto",
+    "vendors": "Anbieter",
     "wholesale": "Großhandel"
   },
   "regionPreferences": {
@@ -67,6 +68,7 @@
     "policies": "Richtlinien",
     "poweredBy": "Betrieben von",
     "copyright": "© {year} {storeName}. Unterstützt durch Spree Commerce.",
+    "vendors": "Anbieter",
     "wholesale": "Handel & Großhandel"
   },
   "home": {
@@ -548,6 +550,14 @@
     "shipping": "Versand",
     "finalizingPayment": "Zahlung wird abgeschlossen...",
     "or": "oder"
+  },
+  "vendors": {
+    "title": "Anbieter",
+    "subtitle": "Entdecken Sie die Anbieter auf unserem Marktplatz",
+    "noVendors": "Keine Anbieter gefunden",
+    "products": "Produkte",
+    "noProducts": "Dieser Anbieter hat noch keine Produkte gelistet",
+    "backToVendors": "Alle Anbieter"
   },
   "wholesale": {
     "portalTitle": "Großhandelsportal",

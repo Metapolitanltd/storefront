@@ -41,6 +41,7 @@
     "openSearch": "Otwórz wyszukiwanie",
     "closeSearch": "Zamknij wyszukiwanie",
     "myAccount": "Moje konto",
+    "vendors": "Sprzedawcy",
     "wholesale": "Hurt"
   },
   "regionPreferences": {
@@ -67,6 +68,7 @@
     "policies": "Regulaminy",
     "poweredBy": "Zasilany przez",
     "copyright": "© {year} {storeName}. Zasilany przez Spree Commerce.",
+    "vendors": "Sprzedawcy",
     "wholesale": "Handel i sprzedaż hurtowa"
   },
   "home": {
@@ -548,6 +550,14 @@
     "shipping": "Dostawa",
     "finalizingPayment": "Finalizowanie płatności...",
     "or": "lub"
+  },
+  "vendors": {
+    "title": "Sprzedawcy",
+    "subtitle": "Przeglądaj sprzedawców na naszym rynku",
+    "noVendors": "Nie znaleziono sprzedawców",
+    "products": "Produkty",
+    "noProducts": "Ten sprzedawca nie dodał jeszcze żadnych produktów",
+    "backToVendors": "Wszyscy sprzedawcy"
   },
   "wholesale": {
     "portalTitle": "Portal hurtowy",
