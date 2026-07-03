@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   buildCallbackUrl,
   buildHostedLoginUrl,
+  getSiteUrl,
   isVeroConfigured,
   RETURN_TO_MAX_AGE,
   VERO_RETURN_TO_COOKIE,
@@ -22,7 +23,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const hostedLoginUrl = buildHostedLoginUrl(buildCallbackUrl());
+  // Callback origin: a configured canonical SITE_URL, else the actual request
+  // origin (so it works without extra env, and matches the allow-listed origin).
+  const origin = getSiteUrl() || request.nextUrl.origin;
+  const hostedLoginUrl = buildHostedLoginUrl(buildCallbackUrl(origin));
   const response = NextResponse.redirect(hostedLoginUrl);
 
   if (isSafeReturnTo(returnTo)) {

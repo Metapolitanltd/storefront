@@ -1,6 +1,6 @@
 import "server-only";
 
-import { VERO_REFRESH_URL, VERO_TOKEN_URL } from "./config";
+import { veroRefreshUrl, veroTokenUrl } from "./config";
 import type { VeroRefresh, VeroTokenResponse } from "./types";
 
 /** Thrown when a Vero gateway call fails (non-2xx or network/timeout). */
@@ -52,7 +52,7 @@ async function postJson(
  * Server-side only — the code is the credential and must never touch the client.
  */
 export async function exchangeCode(code: string): Promise<VeroTokenResponse> {
-  return postJson(VERO_TOKEN_URL, { code });
+  return postJson(veroTokenUrl(), { code });
 }
 
 /**
@@ -84,7 +84,7 @@ export async function refreshVeroTokens(input: {
   const existing = inFlightRefreshes.get(key);
   if (existing) return existing;
 
-  const promise = postJson(VERO_REFRESH_URL, {
+  const promise = postJson(veroRefreshUrl(), {
     uid,
     did: refresh.did,
     tok: refresh.tok,
