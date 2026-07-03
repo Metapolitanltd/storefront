@@ -1,10 +1,7 @@
 /**
  * Vero hosted-login (BFF) configuration.
  *
- * This module is intentionally free of secrets and Node-only APIs so it is safe
- * to import from either the server or the client. It only reads `NEXT_PUBLIC_*`
- * env vars and exposes URL builders + cookie names shared across the flow.
- *
+ * Values are read LAZILY (functions, not module-eval constants) from RUNTIME env
  * The sensitive pieces (session secret, JWKS verification, token exchange) live
  * in the `server-only` sibling modules: `session.ts`, `jwks.ts`, `client.ts`.
  */
@@ -13,46 +10,61 @@ function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
-/** Vero gateway base URL, e.g. https://gateway-dev.veroapi.com */
-export const VERO_BASE_URL = trimTrailingSlash(
-  process.env.NEXT_PUBLIC_VERO_BASE_URL ?? "",
-);
-
-/** Public site origin used to build the absolute callback URL. */
-export const SITE_URL = trimTrailingSlash(
-  process.env.NEXT_PUBLIC_SITE_URL ?? "",
-);
+/** Vero gateway base URL, e.g. https://gateway-dev.veroapi.com (server-only). */
+function baseUrl(): string {
+  return trimTrailingSlash(process.env.NEXT_PUBLIC_VERO_BASE_URL ?? "");
+}
 
 /**
- * Callback path registered with Vero. This is a global (non-locale) API route,
- * e.g. `/api/auth/vero/callback`. Locale context is carried through the
- * `returnTo` cookie, not the URL.
+ * Canonical site origin, if configured — else empty so callers fall back to the
+ * incoming request's origin. Accepts a runtime `SITE_URL` or a build-time
+ * `NEXT_PUBLIC_SITE_URL`.
  */
-export const VERO_AUTH_CB_PATH =
-  process.env.NEXT_PUBLIC_VERO_AUTH_CB ?? "/api/auth/vero/callback";
+export function getSiteUrl(): string {
+  return trimTrailingSlash(
+    process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "",
+  );
+}
+
+/**
+ * Callback path registered with Vero. Global (non-locale) API route, e.g.
+ * `/api/auth/vero/callback`. Locale is carried through the `returnTo` cookie.
+ */
+export function veroAuthCbPath(): string {
+  return process.env.NEXT_PUBLIC_VERO_AUTH_CB ?? "/api/auth/vero/callback";
+}
 
 /** Global login-initiation route. Pass a `?returnTo=` locale-aware path. */
 export const VERO_LOGIN_PATH = "/api/auth/vero/login";
 
 // --- Gateway endpoints (see docs/vero-auth-integration.md) ---
 
-/** Hosted login page URL for a given callback. */
-export function buildHostedLoginUrl(callbackUrl: string): string {
-  return `${VERO_BASE_URL}/auth?redirect=${encodeURIComponent(callbackUrl)}`;
+/** Server-side code → JWT exchange endpoint. */
+export function veroTokenUrl(): string {
+  return `${baseUrl()}/veritas/token`;
 }
 
-/** Server-side code → JWT exchange endpoint. */
-export const VERO_TOKEN_URL = `${VERO_BASE_URL}/veritas/token`;
-
 /** Server-side access-token refresh endpoint. */
-export const VERO_REFRESH_URL = `${VERO_BASE_URL}/veritas/refresh`;
+export function veroRefreshUrl(): string {
+  return `${baseUrl()}/veritas/refresh`;
+}
 
 /** Public JWKS endpoint for RS256 signature verification. */
-export const VERO_JWKS_URL = `${VERO_BASE_URL}/veritas/jwks`;
+export function veroJwksUrl(): string {
+  return `${baseUrl()}/veritas/jwks`;
+}
 
-/** Absolute callback URL, e.g. https://localhost:3001/api/auth/vero/callback */
-export function buildCallbackUrl(): string {
-  return `${SITE_URL}${VERO_AUTH_CB_PATH}`;
+/** Hosted login page URL for a given callback. */
+export function buildHostedLoginUrl(callbackUrl: string): string {
+  return `${baseUrl()}/auth?redirect=${encodeURIComponent(callbackUrl)}`;
+}
+
+/**
+ * Absolute callback URL. `origin` is the public site origin — the login route
+ * passes `getSiteUrl()` when set, otherwise the incoming request's origin.
+ */
+export function buildCallbackUrl(origin: string): string {
+  return `${trimTrailingSlash(origin)}${veroAuthCbPath()}`;
 }
 
 // --- Cookie names ---
@@ -81,7 +93,7 @@ export const RETURN_TO_MAX_AGE = 60 * 10; // 10 minutes
 /** Refresh the access JWT this many seconds before its `exp`. */
 export const ACCESS_REFRESH_SKEW = 30;
 
-/** True once the required public config is present. */
+/** True once the required gateway base URL is configured. */
 export function isVeroConfigured(): boolean {
-  return VERO_BASE_URL.length > 0 && SITE_URL.length > 0;
+  return baseUrl().length > 0;
 }
