@@ -18,7 +18,7 @@ export function VendorCard({
   const about =
     vendor.about_us ||
     (vendor.about_us_html ? stripHtml(vendor.about_us_html) : null);
-  console.log("VendorCard render", { vendor });
+
   return (
     <Link href={`${basePath}/vendors/${vendor.slug}`} className="group block">
       {/* Image */}
