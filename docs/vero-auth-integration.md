@@ -1,202 +1,189 @@
-# VERO Auth - Web Client Integration Guide
+## Vero Hosted Login - Auth Code Flow (Integration Guide)
 
-This document explains how a third-party web app integrates with the VERO authentication flow hosted by the Vero API Gateway (codename **Morannon**).
+This is a BFF (backend-for-frontend) authorization-code flow. Vero hosts the login UI (passkey / password). Your app never handles Vero credentials - you receive a short-lived opaque code, exchange it server-side for a signed JWT, and verify that JWT against Vero’s public keys.
 
-It covers:
+## Endpoints
 
-1. The end-to-end auth flow.
-2. The `?redirect=` query parameter (what to send, what is rejected).
-3. How the JWT lands in your app after a successful login.
-4. The whitelisting request you need to send to Vero backend engineers before going live.
+| Env | Gateway base URL |
+|-----|------------------|
+| Dev | https://gateway-dev.veroapi.com |
+| Staging | https://gateway-stg.veroapi.com |
+| Prod | https://gateway-prd.veroapi.com |
 
----
+Three endpoints are used:
 
-## 1. Flow Overview
+- GET  /auth?redirect=<your-callback-url> - hosted login page
+- POST /veritas/token - exchange code -> JWT (server-side only)
+- GET  /veritas/jwks - public signing keys (for JWT verification)
 
-1. Your app needs an authenticated user.
-2. You redirect the browser to the VERO login page hosted at:
-    ```
-    https://<vero-gateway-host>/auth?redirect=<your-callback-url>
-    ```
-3. The user authenticates (SRP password and/or WebAuthn passkey) on Vero's domain.
-4. On success, Vero redirects the browser back to your callback URL, appending the JWT as a **URL fragment**:
-    ```
-    https://app.example.com/oauth/callback#jwt=<encoded-jwt>
-    ```
-5. Your callback page reads `location.hash`, extracts the JWT, and uses it as the user's session credential.
+## Flow
 
-The JWT is delivered as `#jwt=` (fragment, not query string) so the token never enters server access logs.
+Browser            Your app (server)          Vero gateway
+   |                     |                          |
+   | click "Sign in" --> | redirect to `/auth?redirect=<cb>`            |
+   |---------------------------------------------------------------> |
+   |                     |        user authenticates (passkey)       |
+   | <--- 302 `<cb>?code=<uuid>` ------------------------------------- |
+   |---> GET `<cb>?code`   |                          |
+   |                     | POST `/veritas/token {code}`  ------------> |
+   |                     | <-- 200 {jwt} --------------------------- |
+   |                     | verify jwt via `/veritas/jwks` (RS256)      |
+   |                     | set your own session, redirect to app     |
 
-### 1.1 Gateway Base URLs by Environment
 
-| Environment | Base URL |
-|-------------|----------|
-| Development | `https://gateway-dev.veroapi.com` |
-| Staging     | `https://gateway-stg.veroapi.com` |
-| Production  | `https://gateway.veroapi.com` |
 
-Append `/auth?redirect=<your-callback-url>` to the base URL of the target environment.
 
----
 
-## 2. The `redirect` Query Parameter
+### Step 1 - Send the user to the hosted login
 
-### 2.1 What to Send
+Redirect the browser to:
 
-Pass a fully-qualified HTTPS URL as the value of `?redirect=`.
+`https://gateway-dev.veroapi.com/auth?redirect=https://your-app.example.com/api/auth/callback`
 
-```
-https://<vero-gateway-host>/auth?redirect=https%3A%2F%2Fapp.example.com%2Foauth%2Fcallback
-```
 
-**URL-encode the value** (`encodeURIComponent` in JS) before appending it to the gateway URL.
 
-### 2.2 Validation Rules
 
-The gateway runs a strict validator (`isAllowedRedirect`) on every request. Your URL is rejected unless it satisfies **ALL** of the following:
 
-| # | Rule | Failure reason |
-|---|------|----------------|
-| 1 | Non-empty string | `empty` |
-| 2 | Parses with `new URL()` | `invalid_url` |
-| 3 | Scheme is **exactly** `https:` (no `http:`, no protocol-relative, no `javascript:`, no `data:`) | `bad_scheme` |
-| 4 | No userinfo segment - the URL must NOT contain `user:pass@` | `userinfo` |
-| 5 | Hostname does NOT end with `.` (no trailing-dot FQDNs) | `trailing_dot` |
-| 6 | Origin is not opaque (`null`) | `opaque_origin` |
-| 7 | The URL's **`origin`** (scheme + host + port) exactly matches an entry in Vero's server-side allowlist | `not_allowlisted` |
-| 8 | The allowlist is configured and non-empty for this environment | `disabled` |
+Your callback origin must be allow-listed by Vero first. Send us the exact origin(s) (scheme + host, e.g. https://your-app.example.com) and we will add them. If the origin is not approved, the gateway will not hand back a code.
 
-The match in rule 7 is on `URL.origin` only - **the path, query string, and fragment of your redirect URL are NOT compared** against the allowlist. They are preserved and forwarded.
 
-### 2.3 Examples
 
-| Redirect value | Result |
-|----------------|--------|
-| `https://app.example.com/oauth/callback` | OK (if origin allowlisted) |
-| `https://app.example.com/oauth/callback?state=xyz` | OK - path and query preserved |
-| `http://app.example.com/oauth/callback` | Rejected: `bad_scheme` |
-| `https://app.example.com./oauth/callback` | Rejected: `trailing_dot` |
-| `https://attacker@app.example.com/cb` | Rejected: `userinfo` |
-| `https://staging.example.com/cb` (if not in allowlist) | Rejected: `not_allowlisted` |
-| `//app.example.com/cb` | Rejected: `invalid_url` (no scheme) |
 
-### 2.4 What Happens on Rejection
 
-The login page still renders. The user can still authenticate. But after a successful login the page falls back to **same-origin redirect only** (i.e. it does NOT redirect to your app). The JWT will not reach you.
+### Step 2 - Receive the code on your callback
 
-You get NO error response from `/auth` - the validation happens silently and is surfaced only via the absence of the `<meta name="auth-redirect-origin">` tag in the served HTML. Plan for this by sanity-checking the redirect URL on your side before sending users to `/auth`.
+After the user authenticates, the gateway redirects to:
 
----
+https://your-app.example.com/api/auth/callback?code=2f1c9e3a-....-....-....-............
 
-## 3. Receiving the JWT on Your Callback Page
 
-When the redirect is approved, the user's browser lands on:
 
-```
-https://app.example.com/oauth/callback#jwt=<url-encoded-jwt>
-```
 
-If your redirect URL already had a fragment (e.g. `https://app.example.com/cb#existing`), the gateway replaces it cleanly using `URL.hash` semantics - you receive `#jwt=<token>` only, no `#existing#jwt=...` concatenation.
 
-### 3.1 Minimal Callback Implementation
+The code is:
+- an opaque UUID (validate it matches a UUID before use)
+- single-use (consumed on first exchange)
+- short-lived (~60s TTL) - exchange it immediately
 
-```html
-<!doctype html>
-<html>
-<head><meta charset="utf-8"><title>Authenticating...</title></head>
-<body>
-<script>
-(function () {
-  // Read the fragment (everything after '#'), strip the leading '#'.
-  const hash = window.location.hash.replace(/^#/, '');
-  const params = new URLSearchParams(hash);
-  const jwt = params.get('jwt');
+### Step 3 - Exchange the code for a JWT (server-side)
 
-  if (!jwt) {
-    // No JWT in fragment - either the user came here without going through /auth,
-    // or the redirect was rejected by the gateway validator.
-    window.location.replace('/login-failed');
-    return;
-  }
+From your backend (NOT the browser), POST the code:
 
-  // 1) Store the JWT however your app expects it (cookie, IndexedDB, in-memory).
-  //    The example below sets a same-site cookie. Use Secure in production.
-  document.cookie =
-    'veropass=' + encodeURIComponent(jwt) +
-    ';path=/;SameSite=Strict;Secure';
+POST `/veritas/token`  HTTP/1.1
+Host: `gateway-dev.veroapi.com`
+Content-Type: application/json
 
-  // 2) Wipe the fragment from the URL so the JWT does not linger in the address
-  //    bar / browser history.
-  history.replaceState(null, '', window.location.pathname + window.location.search);
+{ "code": "2f1c9e3a-...." }
 
-  // 3) Continue into the app.
-  window.location.replace('/');
-})();
-</script>
-</body>
-</html>
-```
 
-### 3.2 Security Notes for the Callback Page
 
-- **Always serve the callback over HTTPS.** The gateway enforces HTTPS on its side; you must not break that on yours.
-- **Strip the fragment immediately** after reading it (`history.replaceState`). Fragments persist in browser history and can leak via screen-share, screenshots, and some browser extensions.
-- **Do NOT log the JWT** server-side. It is delivered in the URL fragment specifically so it stays out of HTTP server access logs - keep that property.
-- **Validate the JWT** against the Vero issuer / audience your service is configured for before trusting any claims.
 
----
 
-## 4. Whitelisting Request to Vero Backend Engineers
+Success (200):
 
-Before your integration works in any environment, the Vero backend team must add your callback **origin** to the gateway's `AUTH_REDIRECT_ALLOWED_ORIGINS_JSON` allowlist for that environment.
+{ "jwt": "eyJhbG...compact.JWS...." }
 
-Send a request containing the information below. One line per environment you need.
 
-### 4.1 Information to Provide
 
-| Field | Required | Example |
-|-------|----------|---------|
-| Project / Team name | Yes | `acme-partner-portal` |
-| Contact email | Yes | `eng@acme.example.com` |
-| Environment | Yes | `dev`, `staging`, `production` |
-| Full callback URL | Yes | `https://app.acme.example.com/oauth/callback` |
-| **Origin to whitelist** (derived from the URL above) | Yes | `https://app.acme.example.com` |
-| Expected traffic volume | Optional | `~5k logins/day` |
-| Go-live date | Optional | `2026-06-15` |
 
-### 4.2 Whitelist Format Constraints
 
-What the backend team will actually add to the env variable:
+Failure: 401 if the code is missing / invalid / expired / already consumed. Treat any non-200 as “session invalid” and send the user back to sign-in.
 
-- **Origin only** - scheme + host + optional non-default port. **No path, no query, no fragment, no trailing slash.**
-    - Right: `https://app.example.com`
-    - Right: `https://app.example.com:8443`
-    - Wrong: `https://app.example.com/`
-    - Wrong: `https://app.example.com/oauth/callback`
-    - Wrong: `app.example.com` (missing scheme)
-    - Wrong: `http://app.example.com` (HTTPS only)
-- **Each subdomain is a distinct origin.** `https://app.example.com` does **NOT** cover `https://staging.app.example.com`. Request each subdomain explicitly.
-- **Ports matter.** `https://app.example.com` does NOT cover `https://app.example.com:8443`.
-- **No wildcards.** The validator uses exact-string equality on `URL.origin`. There is no support for `*.example.com` patterns by design (defense against subdomain-takeover open-redirects).
+Use a short timeout (~5s) and do this strictly server-side - the code is the credential, so it must never round-trip through untrusted client JS.
 
-### 4.3 How to Request Whitelisting
+### Step 4 - Verify the JWT
 
-Ping **@antoine** on Slack with the information from 4.1. Example message:
+Fetch Vero’s public keys (this endpoint is public, no auth):
 
-```
-@antoine - VERO auth redirect whitelist request for acme-partner-portal
+GET `/veritas/jwks`  HTTP/1.1
+Host: `gateway-dev.veroapi.com`
 
-Please add the following origins to AUTH_REDIRECT_ALLOWED_ORIGINS_JSON:
 
-  dev         https://dev.app.acme.example.com
-  staging     https://staging.app.acme.example.com
-  production  https://app.acme.example.com
 
-Full callback URLs (for context, NOT what to whitelist):
-  dev         https://dev.app.acme.example.com/oauth/callback
-  staging     https://staging.app.acme.example.com/oauth/callback
-  production  https://app.acme.example.com/oauth/callback
 
-Contact: eng@acme.example.com
-Go-live: 2026-06-15
-```
+
+Returns a standard JWKS ({ "keys": [ ... ] }). Notes:
+- Keys are RS256, use: "sig".
+- Match the JWT by kid and alg.
+- kids are rotated and date-stamped (e.g. client-20260330-6501f530). Cache the JWKS with a short TTL (~5 min) and re-fetch on an unknown kid so rotation doesn’t break you.
+- The user JWT does not set iss / aud - do not enforce issuer/audience checks. Verify signature + expiry, then read the user identity from the uid claim.
+
+### Step 5 - Establish your own session
+
+Once verified, mint your own session (e.g. httpOnly cookie) and authorize the uid however your app requires. Don’t rely on the Vero JWT as your long-lived session token.
+
+Gotchas (the ones that bit us)
+1. Server-side exchange only. The code -> JWT exchange is a BFF step. Don’t do it in the browser.
+2. Exchange fast. ~60s TTL, single-use. Don’t buffer or retry a consumed code.
+3. Allow-list your callback origin with Vero before testing, or you’ll never get a code back.
+4. JWKS rotation. Cache short, re-fetch on unknown kid.
+5. If your backend runs on Cloudflare Workers: server-side subrequests egress from shared Cloudflare IPs, which can be collateral-blocked by the gateway’s edge WAF. If /veritas/token or /veritas/jwks return a Cloudflare block page instead of JSON, ping us - we maintain a WAF skip-rule for these BFF paths and may need to confirm your egress is covered.
+
+## Quick smoke test
+
+*JWKS should return JSON with RS256 keys*
+curl -s `https://gateway-dev.veroapi.com/veritas/jwks` | jq '.keys[] | {kid, alg, use}'
+
+*A bogus code should return 401 (proves the exchange endpoint is reachable)*
+curl -s -o /dev/null -w '%{http_code}\n' \
+  -X POST `https://gateway-dev.veroapi.com/veritas/token` \
+  -H 'Content-Type: application/json' \
+  -d '{"code":"00000000-0000-0000-0000-000000000000"}'
+
+Vero Hosted Login - Refresh Tokens (addendum)
+
+The exchange response is more than just the JWT
+
+POST /veritas/token actually returns:
+
+{
+  "jwt": "eyJhbG....compact.JWS....",
+  "refresh": { "tok": "<ULID>", "exp": 1780000000, "did": "<device-id>" },
+  "settings": { ... }
+}
+
+
+
+
+
+- jwt - the access token. Short-lived (minutes). Read its exp claim; once expired, don’t send it - refresh first.
+- refresh - the refresh-token triple. Long-lived (~30 days). tok is the secret (a ULID), did is the device id, exp is the refresh-token expiry (unix seconds).
+- settings - global app settings blob (optional to use).
+
+/veritas/refresh (below) returns the same shape. Same model applies to your mobile/native logins too - any fresh login response carries this refresh triple.
+
+## Refreshing the access token
+
+When the JWT is near/at expiry, mint a new one server-side:
+
+POST `/veritas/refresh`  HTTP/1.1
+Host: gateway-dev.veroapi.com
+Content-Type: application/json
+
+{
+  "uid": "<user-uuid>",          // the `uid` claim from the current JWT
+  "did": "<refresh.did>",        // device id from the last response
+  "tok": "<refresh.tok>"         // the refresh-token ULID from the last response
+}
+
+
+
+
+
+Success (200) returns a new { jwt, refresh: {tok, exp, did}, settings }.
+
+Failure (401) means the refresh token is invalid / expired / already used -> send the user back through the hosted login (/auth).
+
+## Rules that matter (these are enforced server-side)
+
+1. Rotation - one use per refresh token. Every successful refresh invalidates the old tok and its whole family for that (uid, did) and issues a brand-new one (RFC 6749 §10.4 / OAuth 2.1). So you must persist the new refresh from each response and discard the old one. Reusing a consumed token = 401 and the session is dead.
+2. No parallel refreshes. Because of rotation + reuse-detection, two concurrent refreshes for the same session will kill each other. Serialize refreshes per session (a mutex / single-flight on your backend).
+3. Store it server-side. The refresh token is a 30-day credential. Keep it in your backend session store, never in browser-accessible JS. (Same BFF rule as the code exchange.)
+4. uid comes from the JWT. Decode the verified JWT and read the uid claim; that’s the value you pass back as uid on refresh.
+5. Carry did forward verbatim. Just echo back the did you got in the last response - don’t invent or re-derive it.
+
+## Recommended session model
+
+- On callback: exchange code -> store {refresh.tok, refresh.did} + uid in your server session; set your own httpOnly session cookie to the browser.
+- On each request: if the Vero JWT is still valid use it; if expired, POST /veritas/refresh, persist the rotated triple, continue.
+- On 401 from refresh: clear session, redirect to /auth.

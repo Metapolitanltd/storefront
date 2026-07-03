@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { StoreProvider } from "@/contexts/StoreContext";
+import { VeroAuthProvider } from "@/contexts/VeroAuthContext";
 import { getMarkets } from "@/lib/data/markets";
 import { generateStoreMetadata } from "@/lib/metadata/store";
 import { buildOrganizationJsonLd } from "@/lib/seo";
@@ -81,12 +82,14 @@ export default async function CountryLocaleLayout({
         initialMarkets={markets}
       >
         <AuthProvider>
-          <CartProvider>
-            <JsonLd data={buildOrganizationJsonLd()} />
-            {children}
-            <CartDrawer />
-            <Toaster />
-          </CartProvider>
+          <VeroAuthProvider>
+            <CartProvider>
+              <JsonLd data={buildOrganizationJsonLd()} />
+              {children}
+              <CartDrawer />
+              <Toaster />
+            </CartProvider>
+          </VeroAuthProvider>
         </AuthProvider>
       </StoreProvider>
     </NextIntlClientProvider>
