@@ -264,6 +264,20 @@ export async function getVeroAccessToken(): Promise<string | null> {
 }
 
 /**
+ * The raw access JWT from the cookie, or undefined. Does NOT rotate or touch the
+ * network, so it is safe to call from server components (read-only). Best-effort:
+ * the token may be near/at expiry — use `getVeroAccessToken` / `withVeroAuth`
+ * when you need a guaranteed-valid token for an authenticated API call.
+ *
+ * This is the seam the Spree SDK bearer token flows through now (see
+ * `src/lib/spree/auth-helpers.ts` `getAccessToken`).
+ */
+export async function peekVeroAccessToken(): Promise<string | undefined> {
+  const cookieStore = await cookies();
+  return cookieStore.get(VERO_ACCESS_COOKIE)?.value;
+}
+
+/**
  * Run an authenticated Vero API call with automatic token rotation.
  *
  * Proactively supplies a valid access token; if the API still rejects it as

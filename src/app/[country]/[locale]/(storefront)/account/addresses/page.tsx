@@ -2,7 +2,7 @@ import { MapPin } from "lucide-react";
 import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { AddressManagement } from "@/components/addresses/AddressManagement";
-import type { User } from "@/contexts/AuthContext";
+import type { User } from "@/contexts/VeroAuthContext";
 import { getAddresses } from "@/lib/data/addresses";
 import { getCustomer } from "@/lib/data/customer";
 import { getMarketCountries, resolveMarket } from "@/lib/data/markets";

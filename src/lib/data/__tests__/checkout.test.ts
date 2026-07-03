@@ -32,6 +32,14 @@ vi.mock("@/lib/spree", () => ({
   ),
 }));
 
+// `getCart` (imported transitively) pulls in the server-only Vero session
+// module via cart.ts — mock it so it isn't loaded under jsdom.
+vi.mock("@/lib/vero/session", () => ({
+  withVeroAuth: vi.fn(async (fn: (token: string) => Promise<unknown>) =>
+    fn("jwt-token"),
+  ),
+}));
+
 vi.mock("@spree/sdk", () => ({
   SpreeError: class SpreeError extends Error {
     code: string;

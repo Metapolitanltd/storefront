@@ -4,7 +4,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { VeroAuthProvider } from "@/contexts/VeroAuthContext";
@@ -81,16 +80,14 @@ export default async function CountryLocaleLayout({
         initialLocale={locale}
         initialMarkets={markets}
       >
-        <AuthProvider>
-          <VeroAuthProvider>
-            <CartProvider>
-              <JsonLd data={buildOrganizationJsonLd()} />
-              {children}
-              <CartDrawer />
-              <Toaster />
-            </CartProvider>
-          </VeroAuthProvider>
-        </AuthProvider>
+        <VeroAuthProvider>
+          <CartProvider>
+            <JsonLd data={buildOrganizationJsonLd()} />
+            {children}
+            <CartDrawer />
+            <Toaster />
+          </CartProvider>
+        </VeroAuthProvider>
       </StoreProvider>
     </NextIntlClientProvider>
   );

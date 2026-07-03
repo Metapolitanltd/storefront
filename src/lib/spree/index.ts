@@ -1,22 +1,16 @@
 // Configuration
 
-// Auth helpers (token refresh, cookie-based auth)
-export { getAuthOptions, withAuthRefresh } from "./auth-helpers";
+// Auth helpers — the Vero access JWT is injected into the Spree SDK here.
+export { getAccessToken, withAuthRefresh } from "./auth-helpers";
 export { getClient, getConfig, initSpreeNext } from "./config";
-// Cookie management
+// Cookie management (cart token/ID)
 export {
-  clearAccessToken,
   clearCartCookies,
-  clearRefreshToken,
-  getAccessToken,
   getCartId,
   getCartOptions,
   getCartToken,
-  getRefreshToken,
   requireCartId,
-  setAccessToken,
   setCartCookies,
-  setRefreshToken,
 } from "./cookies";
 // Locale resolution (reads country/locale from cookies)
 export { getLocaleOptions } from "./locale";

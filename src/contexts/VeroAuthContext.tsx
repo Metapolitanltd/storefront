@@ -1,5 +1,6 @@
 "use client";
 
+import type { Customer } from "@spree/sdk";
 import { useRouter } from "next/navigation";
 import {
   createContext,
@@ -10,27 +11,28 @@ import {
   useMemo,
   useState,
 } from "react";
-import { getVeroSession, veroLogout } from "@/lib/data/vero-auth";
+import { getCustomer } from "@/lib/data/customer";
+import { veroLogout } from "@/lib/data/vero-auth";
 import { VERO_LOGIN_PATH } from "@/lib/vero/config";
-import type { VeroSession } from "@/lib/vero/types";
 
 /**
- * Client-facing user shape for the Vero (BFF hosted-login) flow. `id` is the
- * Vero `uid`; `first_name` carries the display name when Vero provides one.
- *
- * This is a separate provider from the legacy Spree `AuthContext` — the Spree
- * auth is decoupled for now, so account/identity reads go through Vero while
- * existing Spree consumers keep using the old context (as guests).
+ * Client-facing user shape. Identity (login state) comes from the Vero session,
+ * but the user's profile details are read from the Spree customer record — the
+ * Vero JWT is injected into the Spree SDK, so `getCustomer()` is authoritative
+ * for name/email here.
  */
-export interface VeroUser {
+export interface User {
   id: string;
   email?: string;
   first_name?: string | null;
   last_name?: string | null;
 }
 
+/** @deprecated Use `User`. Kept as an alias during the Vero auth migration. */
+export type VeroUser = User;
+
 interface VeroAuthContextType {
-  user: VeroUser | null;
+  user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
   /** Redirect the browser to Vero's hosted login (passkey / password). */
@@ -43,24 +45,26 @@ const VeroAuthContext = createContext<VeroAuthContextType | undefined>(
   undefined,
 );
 
-function toUser(session: VeroSession): VeroUser {
+function toUser(customer: Customer): User {
   return {
-    id: session.uid,
-    email: session.email,
-    first_name: session.username || null,
-    last_name: null,
+    id: customer.id,
+    email: customer.email,
+    first_name: customer.first_name,
+    last_name: customer.last_name,
   };
 }
 
 export function VeroAuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<VeroUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Profile/identity is read from the Spree customer record (Vero JWT injected
+  // into the SDK), not from the Vero session claims.
   const refreshUser = useCallback(async () => {
     try {
-      const session = await getVeroSession();
-      setUser(session ? toUser(session) : null);
+      const customer = await getCustomer();
+      setUser(customer ? toUser(customer) : null);
     } catch {
       setUser(null);
     }

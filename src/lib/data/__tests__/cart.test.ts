@@ -29,6 +29,14 @@ vi.mock("@/lib/spree", () => ({
   requireCartId: vi.fn().mockResolvedValue("cart-1"),
 }));
 
+// Cart association now injects the Vero JWT via `withVeroAuth`. Mock it so the
+// real (server-only) session module isn't loaded under jsdom.
+vi.mock("@/lib/vero/session", () => ({
+  withVeroAuth: vi.fn(async (fn: (token: string) => Promise<unknown>) =>
+    fn("jwt-token"),
+  ),
+}));
+
 vi.mock("next/cache", () => ({
   updateTag: vi.fn(),
 }));

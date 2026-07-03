@@ -13,6 +13,7 @@ import {
   requireCartId,
   setCartCookies,
 } from "@/lib/spree";
+import { withVeroAuth } from "@/lib/vero/session";
 import { actionResult } from "./utils";
 
 /**
@@ -138,21 +139,32 @@ export async function removeCartItem(lineItemId: string) {
   }, "Failed to remove cart item");
 }
 
+/**
+ * Associate the guest cart (identified by its cart token) with the currently
+ * authenticated Vero user, injecting the Vero JWT via `withVeroAuth`. Best-effort:
+ * on failure the stale cart cookies are dropped. Safe to call right after a Vero
+ * session is established (e.g. from the auth callback) or from a server action.
+ */
+export async function associateGuestCart(): Promise<void> {
+  const spreeToken = await getCartToken();
+  const cartId = await getCartId();
+  if (!cartId || !spreeToken) return;
+
+  try {
+    await withVeroAuth((token) =>
+      getClient().carts.associate(cartId, { spreeToken, token }),
+    );
+    updateTag("cart");
+  } catch {
+    // Cart belongs to another user, or the user isn't authenticated — drop it.
+    await clearCartCookies();
+    updateTag("cart");
+  }
+}
+
 export async function associateCartWithUser() {
   return actionResult(async () => {
-    const spreeToken = await getCartToken();
-    const token = await getAccessToken();
-    const cartId = await getCartId();
-    if (!cartId || !token) return {};
-
-    try {
-      await getClient().carts.associate(cartId, { spreeToken, token });
-      updateTag("cart");
-    } catch {
-      // Cart might already belong to another user — clear it
-      await clearCartCookies();
-      updateTag("cart");
-    }
+    await associateGuestCart();
     return {};
   }, "Failed to associate cart");
 }

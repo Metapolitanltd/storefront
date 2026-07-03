@@ -273,19 +273,12 @@ await addToCart('var_xxx', 1)
 await updateCartItem('li_xxx', 2)
 await removeCartItem('li_xxx')
 
-// Authentication — uses withAuthRefresh() for authenticated endpoints
-import { login, register, logout, getCustomer } from '@/lib/data/customer'
+// Authentication — Vero hosted login; the Vero JWT is injected into the SDK.
+// getCustomer()/updateCustomer() go through withAuthRefresh() (Vero-backed).
+import { getCustomer, updateCustomer } from '@/lib/data/customer'
 
-const result = await login('user@example.com', 'password')
-await register({
-  email: 'user@example.com',
-  password: 'password',
-  password_confirmation: 'password',
-  first_name: 'John',
-  last_name: 'Doe',
-})
 const customer = await getCustomer()
-await logout()
+await updateCustomer({ first_name: 'John', last_name: 'Doe' })
 
 // Addresses — uses withAuthRefresh() for customer data
 import { getAddresses, createAddress, updateAddress, deleteAddress } from '@/lib/data/addresses'
@@ -296,27 +289,35 @@ await createAddress({ first_name: 'John', ... })
 
 ## Authentication Flow
 
-1. User submits login form
-2. Server action calls `@spree/sdk` to authenticate
-3. JWT token is stored in an httpOnly cookie via `src/lib/spree` cookie helpers
-4. Subsequent requests use `withAuthRefresh()` which reads the token automatically
-5. Token is never accessible to client-side JavaScript
+Auth is handled entirely by **Vero hosted login** (a BFF, authorization-code flow).
+The storefront never handles credentials, registration, or password reset.
+
+1. User is redirected to Vero's hosted login (`/api/auth/vero/login`)
+2. Vero redirects back to `/api/auth/vero/callback` with a single-use code
+3. The callback exchanges the code for a JWT + refresh token, verifies the JWT,
+   and stores the session in httpOnly cookies (`vero_access`, encrypted `vero_refresh`)
+4. Any guest cart is associated with the user (`associateGuestCart()`)
+5. The **Vero JWT is injected into the Spree SDK** as the bearer token — the same
+   seam the Spree token used to flow through. `withAuthRefresh()` sources the token
+   (and its rotation) from the Vero session via `withVeroAuth()`
+6. Tokens are never accessible to client-side JavaScript
 
 ```typescript
-// src/lib/data/customer.ts
-import { getClient, withAuthRefresh, setAccessToken, setRefreshToken } from '@/lib/spree'
+// src/lib/spree/auth-helpers.ts — the SDK auth seam (Vero-backed)
+import { peekVeroAccessToken, withVeroAuth } from '@/lib/vero/session'
 
-export async function login(email: string, password: string) {
-  const result = await getClient().auth.login({ email, password })
-  await setAccessToken(result.token)
-  await setRefreshToken(result.refresh_token)
-  return { success: true, user: result.user }
+export async function withAuthRefresh<T>(
+  fn: (options: RequestOptions) => Promise<T>,
+): Promise<T> {
+  // Inject the Vero JWT; rotate it and retry once on a 401.
+  return withVeroAuth((token) => fn({ token }))
 }
 
+// src/lib/data/customer.ts
+import { getClient, withAuthRefresh } from '@/lib/spree'
+
 export async function getCustomer() {
-  return withAuthRefresh(async (options) => {
-    return getClient().customer.get(options)
-  })
+  return withAuthRefresh((options) => getClient().customer.get(options))
 }
 ```
 

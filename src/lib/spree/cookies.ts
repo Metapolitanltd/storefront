@@ -1,12 +1,9 @@
 import { cookies } from "next/headers";
+import { getAccessToken } from "./auth-helpers";
 import { getConfig } from "./config";
 
 const DEFAULT_CART_COOKIE = "_spree_cart_token";
-const DEFAULT_ACCESS_TOKEN_COOKIE = "_spree_jwt";
-const DEFAULT_REFRESH_TOKEN_COOKIE = "_spree_refresh_token";
 const CART_TOKEN_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
-const ACCESS_TOKEN_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
-const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 function getCartCookieName(): string {
   try {
@@ -18,14 +15,6 @@ function getCartCookieName(): string {
 
 function getCartIdCookieName(): string {
   return `${getCartCookieName()}_id`;
-}
-
-function getAccessTokenCookieName(): string {
-  try {
-    return getConfig().accessTokenCookieName ?? DEFAULT_ACCESS_TOKEN_COOKIE;
-  } catch {
-    return DEFAULT_ACCESS_TOKEN_COOKIE;
-  }
 }
 
 // --- Cart Cookies (token + ID always managed together) ---
@@ -66,63 +55,7 @@ export async function clearCartCookies(): Promise<void> {
   cookieStore.set(getCartIdCookieName(), "", opts);
 }
 
-// --- Access Token (JWT) ---
-
-export async function getAccessToken(): Promise<string | undefined> {
-  const cookieStore = await cookies();
-  return cookieStore.get(getAccessTokenCookieName())?.value;
-}
-
-export async function setAccessToken(token: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(getAccessTokenCookieName(), token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: ACCESS_TOKEN_MAX_AGE,
-  });
-}
-
-export async function clearAccessToken(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(getAccessTokenCookieName(), "", {
-    maxAge: -1,
-    path: "/",
-  });
-}
-
-// --- Refresh Token ---
-
-function getRefreshTokenCookieName(): string {
-  return DEFAULT_REFRESH_TOKEN_COOKIE;
-}
-
-export async function getRefreshToken(): Promise<string | undefined> {
-  const cookieStore = await cookies();
-  return cookieStore.get(getRefreshTokenCookieName())?.value;
-}
-
-export async function setRefreshToken(token: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(getRefreshTokenCookieName(), token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: REFRESH_TOKEN_MAX_AGE,
-  });
-}
-
-export async function clearRefreshToken(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(getRefreshTokenCookieName(), "", {
-    maxAge: -1,
-    path: "/",
-  });
-}
-
-// --- Cart Options (combined cart + access tokens for cart/checkout/payment actions) ---
+// --- Cart Options (combined cart + user tokens for cart/checkout/payment actions) ---
 
 export async function getCartOptions(): Promise<{
   spreeToken: string | undefined;

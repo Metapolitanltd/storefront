@@ -1,4 +1,6 @@
+import { updateTag } from "next/cache";
 import { type NextRequest, NextResponse } from "next/server";
+import { associateGuestCart } from "@/lib/data/cart";
 import { exchangeCode } from "@/lib/vero/client";
 import { verifyVeroJwt } from "@/lib/vero/jwks";
 import { consumeReturnTo, establishVeroSession } from "@/lib/vero/session";
@@ -34,6 +36,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const tokens = await exchangeCode(code);
     const claims = await verifyVeroJwt(tokens.jwt);
     await establishVeroSession(claims, tokens);
+
+    // Attach any guest cart to the now-authenticated user (Vero JWT injected).
+    await associateGuestCart();
+
+    // Identity just changed — drop identity-scoped caches so the post-login
+    // pages render as the authenticated user (parity with the old finalizeAuth;
+    // symmetric with veroLogout).
+    updateTag("customer");
+    updateTag("cart");
 
     const returnTo = await consumeReturnTo();
     const destination = returnTo

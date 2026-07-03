@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useMemo } from "react";
 import { AddressFormFields } from "@/components/checkout/AddressFormFields";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import type { User } from "@/contexts/AuthContext";
+import type { User } from "@/contexts/VeroAuthContext";
 import type { AddressFormData } from "@/lib/utils/address";
 
 interface AddressSelectorProps {

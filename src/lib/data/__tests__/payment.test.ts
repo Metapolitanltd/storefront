@@ -26,6 +26,14 @@ vi.mock("@/lib/spree", () => ({
   requireCartId: vi.fn().mockResolvedValue("cart-1"),
 }));
 
+// `getCart` (imported transitively) pulls in the server-only Vero session
+// module via cart.ts — mock it so it isn't loaded under jsdom.
+vi.mock("@/lib/vero/session", () => ({
+  withVeroAuth: vi.fn(async (fn: (token: string) => Promise<unknown>) =>
+    fn("jwt-token"),
+  ),
+}));
+
 vi.mock("next/cache", () => ({
   updateTag: vi.fn(),
 }));
