@@ -57,6 +57,74 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
+      - name: Write build-time env file
+        env:
+          GTM_ID: ${{ vars.GTM_ID || secrets.GTM_ID }}
+          SENTRY_SEND_DEFAULT_PII: ${{ vars.SENTRY_SEND_DEFAULT_PII || secrets.SENTRY_SEND_DEFAULT_PII }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          STORE_FACEBOOK: ${{ vars.STORE_FACEBOOK }}
+          STORE_INSTAGRAM: ${{ vars.STORE_INSTAGRAM }}
+          STORE_LOGO_URL: ${{ vars.STORE_LOGO_URL }}
+          STORE_META_DESCRIPTION: ${{ vars.STORE_META_DESCRIPTION }}
+          STORE_META_KEYWORDS: ${{ vars.STORE_META_KEYWORDS }}
+          STORE_SEO_TITLE: ${{ vars.STORE_SEO_TITLE }}
+          STORE_SUPPORT_EMAIL: ${{ vars.STORE_SUPPORT_EMAIL }}
+          STORE_TWITTER: ${{ vars.STORE_TWITTER }}
+          NEXT_PUBLIC_ADYEN_CLIENT_KEY: ${{ vars.NEXT_PUBLIC_ADYEN_CLIENT_KEY }}
+          NEXT_PUBLIC_ADYEN_ENVIRONMENT: ${{ vars.NEXT_PUBLIC_ADYEN_ENVIRONMENT }}
+          NEXT_PUBLIC_AUTH_PROVIDER: ${{ vars.NEXT_PUBLIC_AUTH_PROVIDER }}
+          NEXT_PUBLIC_DEFAULT_COUNTRY: ${{ vars.NEXT_PUBLIC_DEFAULT_COUNTRY }}
+          NEXT_PUBLIC_DEFAULT_LOCALE: ${{ vars.NEXT_PUBLIC_DEFAULT_LOCALE }}
+          NEXT_PUBLIC_PAYPAL_CLIENT_ID: ${{ vars.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}
+          NEXT_PUBLIC_SENTRY_SEND_DEFAULT_PII: ${{ vars.NEXT_PUBLIC_SENTRY_SEND_DEFAULT_PII }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_STORE_DESCRIPTION: ${{ vars.NEXT_PUBLIC_STORE_DESCRIPTION }}
+          NEXT_PUBLIC_STORE_NAME: ${{ vars.NEXT_PUBLIC_STORE_NAME }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL: ${{ vars.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL }}
+          NEXT_PUBLIC_VERO_AUTH_CB: ${{ vars.NEXT_PUBLIC_VERO_AUTH_CB }}
+          NEXT_PUBLIC_VERO_BASE_URL: ${{ vars.NEXT_PUBLIC_VERO_BASE_URL }}
+          VERO_SESSION_SECRET: ${{ secrets.VERO_SESSION_SECRET }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const names = [
+            "GTM_ID",
+            "SENTRY_SEND_DEFAULT_PII",
+            "SITE_URL",
+            "STORE_FACEBOOK",
+            "STORE_INSTAGRAM",
+            "STORE_LOGO_URL",
+            "STORE_META_DESCRIPTION",
+            "STORE_META_KEYWORDS",
+            "STORE_SEO_TITLE",
+            "STORE_SUPPORT_EMAIL",
+            "STORE_TWITTER",
+            "NEXT_PUBLIC_ADYEN_CLIENT_KEY",
+            "NEXT_PUBLIC_ADYEN_ENVIRONMENT",
+            "NEXT_PUBLIC_AUTH_PROVIDER",
+            "NEXT_PUBLIC_DEFAULT_COUNTRY",
+            "NEXT_PUBLIC_DEFAULT_LOCALE",
+            "NEXT_PUBLIC_PAYPAL_CLIENT_ID",
+            "NEXT_PUBLIC_SENTRY_SEND_DEFAULT_PII",
+            "NEXT_PUBLIC_SITE_URL",
+            "NEXT_PUBLIC_STORE_DESCRIPTION",
+            "NEXT_PUBLIC_STORE_NAME",
+            "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+            "NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL",
+            "NEXT_PUBLIC_VERO_AUTH_CB",
+            "NEXT_PUBLIC_VERO_BASE_URL",
+            "VERO_SESSION_SECRET",
+          ];
+
+          const lines = names
+            .filter((name) => process.env[name])
+            .map((name) => `${name}=${JSON.stringify(process.env[name])}`);
+
+          fs.writeFileSync(".env.production", `${lines.join("\n")}\n`);
+          NODE
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -72,16 +140,6 @@ jobs:
             SENTRY_DSN=${{ secrets.SENTRY_DSN }}
             SENTRY_ORG=${{ secrets.SENTRY_ORG }}
             SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
-            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
-            NEXT_PUBLIC_DEFAULT_COUNTRY=${{ vars.NEXT_PUBLIC_DEFAULT_COUNTRY }}
-            NEXT_PUBLIC_DEFAULT_LOCALE=${{ vars.NEXT_PUBLIC_DEFAULT_LOCALE }}
-            NEXT_PUBLIC_STORE_NAME=${{ vars.NEXT_PUBLIC_STORE_NAME }}
-            NEXT_PUBLIC_STORE_DESCRIPTION=${{ vars.NEXT_PUBLIC_STORE_DESCRIPTION }}
-            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-            NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ vars.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}
-            NEXT_PUBLIC_ADYEN_CLIENT_KEY=${{ vars.NEXT_PUBLIC_ADYEN_CLIENT_KEY }}
-            NEXT_PUBLIC_ADYEN_ENVIRONMENT=${{ vars.NEXT_PUBLIC_ADYEN_ENVIRONMENT }}
-            NEXT_PUBLIC_SENTRY_SEND_DEFAULT_PII=${{ vars.NEXT_PUBLIC_SENTRY_SEND_DEFAULT_PII }}
           secrets: |
             sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:buildcache
