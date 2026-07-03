@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { getCategory } from "./categories";
 import { getProduct } from "./products";
+import { getVendor } from "./vendors";
 
 /** Expand list used on the product detail page. */
 export const PRODUCT_PAGE_EXPAND = [
@@ -43,3 +44,5 @@ export const getCachedCategory = cache(
   (idOrPermalink: string, expand: string[]) =>
     getCategory(idOrPermalink, { expand }),
 );
+
+export const getCachedVendor = cache((slug: string) => getVendor(slug));

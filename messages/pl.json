@@ -37,7 +37,8 @@
     "viewAllCategory": "Zobacz wszystkie {category}",
     "openSearch": "Otwórz wyszukiwanie",
     "closeSearch": "Zamknij wyszukiwanie",
-    "myAccount": "Moje konto"
+    "myAccount": "Moje konto",
+    "vendors": "Sprzedawcy"
   },
   "footer": {
     "description": "Sklep e-commerce open source oparty na Spree REST API, TypeScript SDK i Next.js. Hostuj samodzielnie. Twoje dane. Zero opłat platformowych.",
@@ -53,7 +54,8 @@
     "cart": "Koszyk",
     "policies": "Regulaminy",
     "poweredBy": "Zasilany przez",
-    "copyright": "© {year} {storeName}. Zasilany przez Spree Commerce."
+    "copyright": "© {year} {storeName}. Zasilany przez Spree Commerce.",
+    "vendors": "Sprzedawcy"
   },
   "home": {
     "welcome": "{storeName} Storefront",
@@ -527,5 +529,13 @@
     "shipping": "Dostawa",
     "finalizingPayment": "Finalizowanie płatności...",
     "or": "lub"
+  },
+  "vendors": {
+    "title": "Sprzedawcy",
+    "subtitle": "Przeglądaj sprzedawców na naszym rynku",
+    "noVendors": "Nie znaleziono sprzedawców",
+    "products": "Produkty",
+    "noProducts": "Ten sprzedawca nie dodał jeszcze żadnych produktów",
+    "backToVendors": "Wszyscy sprzedawcy"
   }
 }
