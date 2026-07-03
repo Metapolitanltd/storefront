@@ -15,8 +15,8 @@ vi.mock("next/navigation", () => ({
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
 }));
-vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => mocks.auth,
+vi.mock("@/contexts/VeroAuthContext", () => ({
+  useVeroAuth: () => mocks.auth,
 }));
 vi.mock("@/components/account/AccountShell", () => ({
   AccountShell: ({ children }: { children: React.ReactNode }) => (

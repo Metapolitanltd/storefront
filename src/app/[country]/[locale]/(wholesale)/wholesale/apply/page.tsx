@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Building2,
-  CheckCircle2,
-  CircleAlert,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { Building2, CheckCircle2, CircleAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -23,34 +17,109 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/AuthContext";
+import { type User, useVeroAuth } from "@/contexts/VeroAuthContext";
+import { updateCustomer } from "@/lib/data/customer";
 import { extractBasePath } from "@/lib/utils/path";
 import { wholesaleSignInHref } from "@/lib/wholesale";
 
 /**
- * Wholesale application form. Registers a customer via the shared register flow
- * (phone is forwarded; company name persists as customer metadata, which the
- * merchant sees on the admin customer record). On success the buyer has an
- * account but is not yet in the Wholesale group — the demo "approval" is an
- * admin adding them — so we show a received/pending confirmation rather than
- * dropping them into the portal.
+ * Wholesale application. Accounts are created through Vero's hosted login, so a
+ * guest first signs in (or signs up) there and comes back here; the signed-in
+ * buyer then submits their trade details, saved on the Spree customer record
+ * (phone, and company as metadata the merchant sees on the admin customer
+ * record). Approval is still an admin adding them to the Wholesale group, so on
+ * success we show a received/pending confirmation rather than dropping them into
+ * the portal.
  */
 export default function WholesaleApplyPage() {
   const t = useTranslations("wholesale");
   const ta = useTranslations("account");
-  const tr = useTranslations("register");
   const pathname = usePathname();
   const storeBase = extractBasePath(pathname);
   const wholesaleBase = `${storeBase}/wholesale`;
-  const { register } = useAuth();
+  const { user, loading, signIn } = useVeroAuth();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="animate-pulse space-y-4">
+          <div className="mx-auto h-8 w-1/2 rounded bg-slate-200" />
+          <div className="mx-auto h-4 w-3/4 rounded bg-slate-200" />
+          <div className="h-48 rounded bg-slate-200" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16 sm:px-6 lg:px-8">
+        <Card>
+          <ApplyHeader />
+          <CardContent>
+            <Button
+              type="button"
+              size="lg"
+              className="w-full bg-slate-900 hover:bg-slate-800"
+              onClick={() => signIn(`${wholesaleBase}/apply`)}
+            >
+              {ta("signIn")}
+            </Button>
+          </CardContent>
+          <CardFooter className="justify-center">
+            <p className="text-sm text-muted-foreground">
+              {t("apply.alreadyMember")}{" "}
+              <Link
+                href={wholesaleSignInHref(storeBase)}
+                className="font-medium text-slate-900 hover:underline"
+              >
+                {t("signInWall.submit")}
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <WholesaleApplicationForm
+      key={user.id}
+      user={user}
+      wholesaleBase={wholesaleBase}
+    />
+  );
+}
+
+function ApplyHeader() {
+  const t = useTranslations("wholesale");
+
+  return (
+    <CardHeader className="text-center">
+      <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+        <Building2 className="h-6 w-6 text-slate-700" />
+      </div>
+      <CardTitle>{t("apply.title")}</CardTitle>
+      <CardDescription>{t("apply.description")}</CardDescription>
+    </CardHeader>
+  );
+}
+
+// Keyed by user id so the prefilled name resets when the signed-in user changes.
+function WholesaleApplicationForm({
+  user,
+  wholesaleBase,
+}: {
+  user: User;
+  wholesaleBase: string;
+}) {
+  const t = useTranslations("wholesale");
+  const tr = useTranslations("register");
+
+  const [firstName, setFirstName] = useState(user.first_name ?? "");
+  const [lastName, setLastName] = useState(user.last_name ?? "");
   const [company, setCompany] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -58,35 +127,23 @@ export default function WholesaleApplyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    if (password.length < 6) {
-      setError(tr("passwordTooShort"));
-      return;
-    }
-
     setSubmitting(true);
-    try {
-      const result = await register({
-        email,
-        password,
-        password_confirmation: password,
-        ...(firstName && { first_name: firstName }),
-        ...(lastName && { last_name: lastName }),
-        ...(phone && { phone }),
-        // Company has no first-class customer column; persist it as metadata so
-        // it reaches the applicant's admin record for the merchant's review.
-        ...(company.trim() && { metadata: { company: company.trim() } }),
-      });
-      if (result.success) {
-        setSubmitted(true);
-      } else {
-        setError(result.error ?? tr("registrationFailed"));
-      }
-    } catch {
-      setError(tr("unexpectedError"));
-    } finally {
-      setSubmitting(false);
+
+    const result = await updateCustomer({
+      first_name: firstName,
+      last_name: lastName,
+      ...(phone && { phone }),
+      // Company has no first-class customer column; persist it as metadata so
+      // it reaches the applicant's admin record for the merchant's review.
+      ...(company.trim() && { metadata: { company: company.trim() } }),
+    });
+
+    if (result.success) {
+      setSubmitted(true);
+    } else {
+      setError(result.error ?? tr("unexpectedError"));
     }
+    setSubmitting(false);
   };
 
   if (submitted) {
@@ -113,13 +170,7 @@ export default function WholesaleApplyPage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-16 sm:px-6 lg:px-8">
       <Card>
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-            <Building2 className="h-6 w-6 text-slate-700" />
-          </div>
-          <CardTitle>{t("apply.title")}</CardTitle>
-          <CardDescription>{t("apply.description")}</CardDescription>
-        </CardHeader>
+        <ApplyHeader />
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -179,75 +230,16 @@ export default function WholesaleApplyPage() {
               />
             </Field>
 
-            <Field>
-              <FieldLabel htmlFor="apply-email">{ta("email")}</FieldLabel>
-              <Input
-                id="apply-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="you@company.com"
-              />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="apply-password">{ta("password")}</FieldLabel>
-              <div className="relative">
-                <Input
-                  id="apply-password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  placeholder="••••••••"
-                  className="pr-10"
-                />
-                <div className="absolute right-1 top-1/2 -translate-y-1/2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={
-                      showPassword ? ta("hidePassword") : ta("showPassword")
-                    }
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </Field>
-
             <Button
               type="submit"
               disabled={submitting}
               size="lg"
               className="w-full bg-slate-900 hover:bg-slate-800"
             >
-              {submitting ? tr("creatingAccount") : t("apply.submit")}
+              {t("apply.submit")}
             </Button>
           </form>
         </CardContent>
-
-        <CardFooter className="justify-center">
-          <p className="text-sm text-muted-foreground">
-            {t("apply.alreadyMember")}{" "}
-            <Link
-              href={wholesaleSignInHref(storeBase)}
-              className="font-medium text-slate-900 hover:underline"
-            >
-              {t("signInWall.submit")}
-            </Link>
-          </p>
-        </CardFooter>
       </Card>
     </div>
   );

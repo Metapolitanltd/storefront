@@ -23,9 +23,9 @@ import {
 } from "@/components/checkout/PaymentSection";
 import { PolicyConsent } from "@/components/policy/PolicyConsent";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useCheckout } from "@/contexts/CheckoutContext";
+import { useVeroAuth } from "@/contexts/VeroAuthContext";
 import {
   trackAddPaymentInfo,
   trackAddShippingInfo,
@@ -94,7 +94,7 @@ function CheckoutPageContentInner({
   const { cart: contextCart } = useCart();
   const t = useTranslations("checkout");
   const tc = useTranslations("common");
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useVeroAuth();
 
   // Pick up payment errors from the confirm-payment redirect
   const paymentError = searchParams.get("payment_error");

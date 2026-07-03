@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { getAccessToken } from "./auth-helpers";
 import { getConfig } from "./config";
 import {
   cartCookieBaseName,
@@ -8,27 +9,7 @@ import {
 } from "./surface";
 
 const DEFAULT_CART_COOKIE = "_spree_cart_token";
-const DEFAULT_ACCESS_TOKEN_COOKIE = "_spree_jwt";
-const DEFAULT_REFRESH_TOKEN_COOKIE = "_spree_refresh_token";
 const CART_TOKEN_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
-const ACCESS_TOKEN_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
-const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
-
-/**
- * Whether the current execution context may write cookies. Next.js allows
- * cookie mutation only in Server Actions and Route Handlers, never during a
- * Server Component render. We probe with a harmless deletion of a throwaway
- * cookie: it succeeds in a writable context and throws otherwise.
- */
-export async function canPersistCookies(): Promise<boolean> {
-  try {
-    const cookieStore = await cookies();
-    cookieStore.set("_spree_write_probe", "", { maxAge: -1, path: "/" });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 function getCartCookieName(surface: Surface = DEFAULT_SURFACE): string {
   if (surface === "wholesale") return cartCookieBaseName(surface);
@@ -41,14 +22,6 @@ function getCartCookieName(surface: Surface = DEFAULT_SURFACE): string {
 
 function getCartIdCookieName(surface: Surface = DEFAULT_SURFACE): string {
   return `${getCartCookieName(surface)}_id`;
-}
-
-function getAccessTokenCookieName(): string {
-  try {
-    return getConfig().accessTokenCookieName ?? DEFAULT_ACCESS_TOKEN_COOKIE;
-  } catch {
-    return DEFAULT_ACCESS_TOKEN_COOKIE;
-  }
 }
 
 // --- Cart Cookies (token + ID always managed together) ---
@@ -109,63 +82,7 @@ export async function clearAllCartCookies(): Promise<void> {
   await Promise.all(SURFACES.map((surface) => clearCartCookies(surface)));
 }
 
-// --- Access Token (JWT) ---
-
-export async function getAccessToken(): Promise<string | undefined> {
-  const cookieStore = await cookies();
-  return cookieStore.get(getAccessTokenCookieName())?.value;
-}
-
-export async function setAccessToken(token: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(getAccessTokenCookieName(), token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: ACCESS_TOKEN_MAX_AGE,
-  });
-}
-
-export async function clearAccessToken(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(getAccessTokenCookieName(), "", {
-    maxAge: -1,
-    path: "/",
-  });
-}
-
-// --- Refresh Token ---
-
-function getRefreshTokenCookieName(): string {
-  return DEFAULT_REFRESH_TOKEN_COOKIE;
-}
-
-export async function getRefreshToken(): Promise<string | undefined> {
-  const cookieStore = await cookies();
-  return cookieStore.get(getRefreshTokenCookieName())?.value;
-}
-
-export async function setRefreshToken(token: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(getRefreshTokenCookieName(), token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: REFRESH_TOKEN_MAX_AGE,
-  });
-}
-
-export async function clearRefreshToken(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(getRefreshTokenCookieName(), "", {
-    maxAge: -1,
-    path: "/",
-  });
-}
-
-// --- Cart Options (combined cart + access tokens for cart/checkout/payment actions) ---
+// --- Cart Options (combined cart + user tokens for cart/checkout/payment actions) ---
 
 export async function getCartOptions(
   surface: Surface = DEFAULT_SURFACE,

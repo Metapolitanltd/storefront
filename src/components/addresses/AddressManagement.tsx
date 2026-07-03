@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import type { User } from "@/contexts/AuthContext";
+import type { User } from "@/contexts/VeroAuthContext";
 import {
   createAddress,
   deleteAddress,

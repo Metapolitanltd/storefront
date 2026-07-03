@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useVeroAuth } from "@/contexts/VeroAuthContext";
 import { wholesaleSignInHref } from "@/lib/wholesale";
 
 interface WholesaleHeaderProps {
@@ -38,7 +38,7 @@ export function WholesaleHeader({
 }: WholesaleHeaderProps) {
   const t = useTranslations("wholesale");
   const { itemCount } = useCart();
-  const { logout } = useAuth();
+  const { logout } = useVeroAuth();
 
   const wholesaleBase = `${basePath}/wholesale`;
 

@@ -4,6 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import { PRODUCT_PAGE_EXPAND } from "@/lib/data/cached";
 import { ProductDetails } from "./ProductDetails";
 
+// `@/lib/data/cached` reaches the Spree auth seam, which imports the
+// server-only Vero session module. Mock it so jsdom doesn't load it.
+vi.mock("@/lib/vero/session", () => ({
+  peekVeroAccessToken: vi.fn(),
+  withVeroAuth: vi.fn(),
+}));
+
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
 }));

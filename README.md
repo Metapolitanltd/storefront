@@ -153,6 +153,18 @@ Unit and integration tests run through Vitest (`pnpm test`); end-to-end tests ru
 
 Multiple countries, currencies, and languages from one deployment via `/{country}/{locale}` URL segments and edge middleware. See the [Multi-Region guide](https://spreecommerce.org/docs/developer/storefront/nextjs/multi-region).
 
+## Authentication (Vero)
+
+This fork replaces Spree's built-in customer auth with **Vero hosted login** (a BFF, authorization-code flow). The storefront never handles credentials, registration, or password reset — `/account/register`, `/account/forgot-password`, and `/account/reset-password` redirect into the hosted flow. See [`docs/vero-auth-integration.md`](docs/vero-auth-integration.md) for the gateway contract.
+
+1. Sign-in sends the browser to `/api/auth/vero/login`, which redirects to Vero's hosted login
+2. Vero redirects back to `/api/auth/vero/callback` with a single-use code
+3. The callback exchanges the code for a JWT + refresh token, verifies the JWT against Vero's JWKS, and stores the session in httpOnly cookies (`vero_access`, encrypted `vero_refresh`)
+4. Any guest cart is associated with the user (`associateGuestCart()`)
+5. The Vero JWT is injected into the Spree SDK as the bearer token — `withAuthRefresh()` in `src/lib/spree/auth-helpers.ts` sources the token (and its rotation) from `withVeroAuth()`, so every authenticated data call runs as the Vero user
+
+Required env: `NEXT_PUBLIC_VERO_BASE_URL`, `NEXT_PUBLIC_VERO_AUTH_CB`, and `VERO_SESSION_SECRET` (encrypts the refresh cookie).
+
 ## Customization
 
 The storefront ships in your project — restyle with Tailwind CSS, swap components in `src/components/`, and adjust the server actions in `src/lib/data/`. See the [Customization guide](https://spreecommerce.org/docs/developer/storefront/nextjs/customization).

@@ -17,6 +17,7 @@ import {
   type Surface,
   setCartCookies,
 } from "@/lib/spree";
+import { withVeroAuth } from "@/lib/vero/session";
 import { actionResult } from "./utils";
 
 /** Cache tag for a surface's cart, so DTC and wholesale carts invalidate independently. */
@@ -213,26 +214,39 @@ export async function removeCartItem(
   }, "Failed to remove cart item");
 }
 
+/**
+ * Associate the guest cart (identified by its cart token) with the currently
+ * authenticated Vero user, injecting the Vero JWT via `withVeroAuth`. Best-effort:
+ * on failure the stale cart cookies are dropped. Safe to call right after a Vero
+ * session is established (e.g. from the auth callback) or from a server action.
+ */
+export async function associateGuestCart(
+  surface: Surface = DEFAULT_SURFACE,
+): Promise<void> {
+  const spreeToken = await getCartToken(surface);
+  const cartId = await getCartId(surface);
+  if (!cartId || !spreeToken) return;
+
+  try {
+    await withVeroAuth((token) =>
+      getClientForSurface(surface).carts.associate(cartId, {
+        spreeToken,
+        token,
+      }),
+    );
+    updateTag(cartTag(surface));
+  } catch {
+    // Cart belongs to another user, or the user isn't authenticated — drop it.
+    await clearCartCookies(surface);
+    updateTag(cartTag(surface));
+  }
+}
+
 export async function associateCartWithUser(
   surface: Surface = DEFAULT_SURFACE,
 ) {
   return actionResult(async () => {
-    const spreeToken = await getCartToken(surface);
-    const token = await getAccessToken();
-    const cartId = await getCartId(surface);
-    if (!cartId || !token) return {};
-
-    try {
-      await getClientForSurface(surface).carts.associate(cartId, {
-        spreeToken,
-        token,
-      });
-      updateTag(cartTag(surface));
-    } catch {
-      // Cart might already belong to another user — clear it
-      await clearCartCookies(surface);
-      updateTag(cartTag(surface));
-    }
+    await associateGuestCart(surface);
     return {};
   }, "Failed to associate cart");
 }

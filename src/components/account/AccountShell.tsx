@@ -14,7 +14,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useVeroAuth } from "@/contexts/VeroAuthContext";
 import { extractBasePath } from "@/lib/utils/path";
 
 function getNavItems(t: ReturnType<typeof useTranslations<"account">>): {
@@ -41,7 +41,7 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const basePath = extractBasePath(pathname);
-  const { user, logout } = useAuth();
+  const { user, logout } = useVeroAuth();
   const navItems = getNavItems(t);
 
   const handleLogout = async () => {

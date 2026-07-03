@@ -9,7 +9,7 @@ import { AddressEditModal } from "@/components/checkout/AddressEditModal";
 import { AddressFormFields } from "@/components/checkout/AddressFormFields";
 import { AddressSelector } from "@/components/checkout/AddressSelector";
 import { Input } from "@/components/ui/input";
-import type { User } from "@/contexts/AuthContext";
+import type { User } from "@/contexts/VeroAuthContext";
 import { useCountryStates } from "@/hooks/useCountryStates";
 import {
   type AddressFormData,

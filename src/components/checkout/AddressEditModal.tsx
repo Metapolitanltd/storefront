@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import type { User } from "@/contexts/AuthContext";
+import type { User } from "@/contexts/VeroAuthContext";
 import { useCountryStates } from "@/hooks/useCountryStates";
 import {
   type AddressFormData,

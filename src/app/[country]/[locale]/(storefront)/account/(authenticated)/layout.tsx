@@ -3,11 +3,11 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AuthenticatedAccountShell } from "@/components/account/AuthenticatedAccountShell";
 import { REQUEST_PATHNAME_HEADER, REQUEST_SEARCH_HEADER } from "@/i18n/routing";
-import { getAccessToken, getRefreshToken } from "@/lib/spree";
 import {
   buildAccountLoginHref,
   resolveAccountRedirect,
 } from "@/lib/utils/account-redirect";
+import { readVeroSession } from "@/lib/vero/session";
 
 interface AuthenticatedAccountLayoutProps {
   children: React.ReactNode;
@@ -28,8 +28,11 @@ export async function AuthenticatedAccountLayoutContent({
   children,
   params,
 }: AuthenticatedAccountLayoutProps) {
-  const [{ country, locale }, requestHeaders, accessToken, refreshToken] =
-    await Promise.all([params, headers(), getAccessToken(), getRefreshToken()]);
+  const [{ country, locale }, requestHeaders, session] = await Promise.all([
+    params,
+    headers(),
+    readVeroSession(),
+  ]);
 
   const basePath = `/${country}/${locale}`;
   const pathname = requestHeaders.get(REQUEST_PATHNAME_HEADER);
@@ -38,10 +41,11 @@ export async function AuthenticatedAccountLayoutContent({
   const returnTo = resolveAccountRedirect(requestedPath, basePath);
   const loginHref = buildAccountLoginHref(basePath, returnTo);
 
-  // A refresh token is also a recoverable session credential. Let the client
-  // session action rotate it in a cookie-writable context before deciding that
-  // the customer is anonymous.
-  if (!accessToken && !refreshToken) redirect(loginHref);
+  // `readVeroSession` resolves an identity from the Vero access JWT, or from the
+  // refresh cookie once that short-lived JWT has expired — a recoverable session
+  // the client session check rotates in a cookie-writable context. No identity
+  // at all means the customer is anonymous.
+  if (!session) redirect(loginHref);
 
   return (
     <AuthenticatedAccountShell loginHref={loginHref}>

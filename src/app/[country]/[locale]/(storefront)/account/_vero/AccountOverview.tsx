@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { AccountShell } from "@/components/account/AccountShell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useVeroAuth } from "@/contexts/VeroAuthContext";
+import { resolveAccountRedirect } from "@/lib/utils/account-redirect";
 import { extractBasePath } from "@/lib/utils/path";
 
 export default function AccountPage() {
@@ -31,7 +33,10 @@ export default function AccountPage() {
 
   // Preserve a post-login destination (e.g. coming from checkout) and surface
   // any error the callback bounced back with.
-  const redirectUrl = searchParams.get("redirect");
+  const redirectUrl = resolveAccountRedirect(
+    searchParams.get("redirect"),
+    basePath,
+  );
   const hasError = searchParams.get("error") !== null;
 
   // Show loading state while auth is initializing
@@ -81,84 +86,86 @@ export default function AccountPage() {
 
   // Show account dashboard if authenticated
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        {t("accountOverview")}
-      </h1>
+    <AccountShell>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+          {t("accountOverview")}
+        </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link href={`${basePath}/account/orders`}>
-          <Card className="hover:border-gray-300 transition-colors h-full">
-            <CardContent className="flex items-center gap-4 py-0">
-              <div className="p-3 bg-gray-100 rounded-xl">
-                <ShoppingBag className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-medium text-gray-900">
-                  {t("orderHistory")}
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  {t("orderHistoryDescription")}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Link href={`${basePath}/account/orders`}>
+            <Card className="hover:border-gray-300 transition-colors h-full">
+              <CardContent className="flex items-center gap-4 py-0">
+                <div className="p-3 bg-gray-100 rounded-xl">
+                  <ShoppingBag className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900">
+                    {t("orderHistory")}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {t("orderHistoryDescription")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-        <Link href={`${basePath}/account/addresses`}>
-          <Card className="hover:border-gray-300 transition-colors h-full">
-            <CardContent className="flex items-center gap-4 py-0">
-              <div className="p-3 bg-gray-100 rounded-xl">
-                <MapPin className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-medium text-gray-900">
-                  {t("addresses")}
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  {t("addressesDescription")}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+          <Link href={`${basePath}/account/addresses`}>
+            <Card className="hover:border-gray-300 transition-colors h-full">
+              <CardContent className="flex items-center gap-4 py-0">
+                <div className="p-3 bg-gray-100 rounded-xl">
+                  <MapPin className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900">
+                    {t("addresses")}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {t("addressesDescription")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-        <Link href={`${basePath}/account/credit-cards`}>
-          <Card className="hover:border-gray-300 transition-colors h-full">
-            <CardContent className="flex items-center gap-4 py-0">
-              <div className="p-3 bg-gray-100 rounded-xl">
-                <CreditCard className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-medium text-gray-900">
-                  {t("paymentMethods")}
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  {t("paymentMethodsDescription")}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+          <Link href={`${basePath}/account/credit-cards`}>
+            <Card className="hover:border-gray-300 transition-colors h-full">
+              <CardContent className="flex items-center gap-4 py-0">
+                <div className="p-3 bg-gray-100 rounded-xl">
+                  <CreditCard className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900">
+                    {t("paymentMethods")}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {t("paymentMethodsDescription")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-        <Link href={`${basePath}/account/profile`}>
-          <Card className="hover:border-gray-300 transition-colors h-full">
-            <CardContent className="flex items-center gap-4 py-0">
-              <div className="p-3 bg-gray-100 rounded-xl">
-                <User className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-medium text-gray-900">
-                  {t("profile")}
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  {t("profileDescription")}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+          <Link href={`${basePath}/account/profile`}>
+            <Card className="hover:border-gray-300 transition-colors h-full">
+              <CardContent className="flex items-center gap-4 py-0">
+                <div className="p-3 bg-gray-100 rounded-xl">
+                  <User className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900">
+                    {t("profile")}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {t("profileDescription")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
       </div>
-    </div>
+    </AccountShell>
   );
 }

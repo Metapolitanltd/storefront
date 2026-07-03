@@ -2,115 +2,48 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Outer state referenced inside vi.mock factories must be `mock`-prefixed so
 // Vitest allows it past the hoisting guard.
-const mockClient = { auth: { refresh: vi.fn() } };
-const mockCookieState: { access?: string; refresh?: string } = {};
-const mockCanPersist = vi.fn(async () => true);
-const mockIsJwtExpired = vi.fn(() => true);
-const mockClearAccessToken = vi.fn(async () => {
-  mockCookieState.access = undefined;
-});
-const mockClearRefreshToken = vi.fn(async () => {
-  mockCookieState.refresh = undefined;
-});
-const mockSetAccessToken = vi.fn(async (token: string) => {
-  mockCookieState.access = token;
-});
-const mockSetRefreshToken = vi.fn(async (token: string) => {
-  mockCookieState.refresh = token;
-});
+const mockPeekVeroAccessToken = vi.fn();
+const mockWithVeroAuth = vi.fn();
 
-vi.mock("../config", () => ({ getClient: () => mockClient }));
-vi.mock("../jwt", () => ({ isJwtExpired: () => mockIsJwtExpired() }));
-vi.mock("../cookies", () => ({
-  getAccessToken: async () => mockCookieState.access,
-  getRefreshToken: async () => mockCookieState.refresh,
-  canPersistCookies: () => mockCanPersist(),
-  setAccessToken: (token: string) => mockSetAccessToken(token),
-  setRefreshToken: (token: string) => mockSetRefreshToken(token),
-  clearAccessToken: () => mockClearAccessToken(),
-  clearRefreshToken: () => mockClearRefreshToken(),
+vi.mock("@/lib/vero/session", () => ({
+  peekVeroAccessToken: () => mockPeekVeroAccessToken(),
+  withVeroAuth: (fn: (token: string) => Promise<unknown>) =>
+    mockWithVeroAuth(fn),
 }));
 
-vi.mock("@spree/sdk", () => ({
-  SpreeError: class SpreeError extends Error {
-    code: string;
-    status: number;
-    constructor(
-      response: { error: { code: string; message: string } },
-      status: number,
-    ) {
-      super(response.error.message);
-      this.code = response.error.code;
-      this.status = status;
-    }
-  },
-}));
+import { getAccessToken, withAuthRefresh } from "../auth-helpers";
 
-import { ensureFreshSession } from "../auth-helpers";
-
-describe("ensureFreshSession refresh resilience", () => {
+describe("Vero-backed Spree auth seam", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockClient.auth.refresh.mockReset();
-    mockCookieState.access = "expired-jwt";
-    mockCookieState.refresh = "rt-1";
   });
 
-  it("preserves the session when the refresh call fails transiently", async () => {
-    mockClient.auth.refresh.mockRejectedValueOnce(new Error("network down"));
+  it("reads the SDK bearer token from the Vero access cookie", async () => {
+    mockPeekVeroAccessToken.mockResolvedValue("vero-jwt");
 
-    const state = await ensureFreshSession();
-
-    expect(state).toBe("stale");
-    expect(mockClearAccessToken).not.toHaveBeenCalled();
-    expect(mockClearRefreshToken).not.toHaveBeenCalled();
-    expect(mockCookieState.refresh).toBe("rt-1");
+    await expect(getAccessToken()).resolves.toBe("vero-jwt");
   });
 
-  it("drops the session when the refresh token is confirmed invalid", async () => {
-    const { SpreeError } = await import("@spree/sdk");
-    mockClient.auth.refresh.mockRejectedValueOnce(
-      new SpreeError(
-        { error: { code: "invalid_refresh_token", message: "Invalid" } },
-        401,
-      ),
-    );
+  it("returns no token for guests", async () => {
+    mockPeekVeroAccessToken.mockResolvedValue(undefined);
 
-    const state = await ensureFreshSession();
-
-    expect(state).toBe("expired");
-    expect(mockClearAccessToken).toHaveBeenCalled();
-    expect(mockClearRefreshToken).toHaveBeenCalled();
+    await expect(getAccessToken()).resolves.toBeUndefined();
   });
 
-  it("coalesces concurrent refreshes sharing a token into a single call", async () => {
-    mockClient.auth.refresh.mockImplementation(async () => {
-      // Yield once so both callers reach the in-flight map before resolving.
-      await Promise.resolve();
-      return { token: "new-jwt", refresh_token: "rt-2" };
+  it("injects the (possibly rotated) Vero JWT as the SDK request token", async () => {
+    mockWithVeroAuth.mockImplementation((fn) => fn("rotated-jwt"));
+    const call = vi.fn().mockResolvedValue("customer");
+
+    await expect(withAuthRefresh(call)).resolves.toBe("customer");
+    expect(call).toHaveBeenCalledWith({ token: "rotated-jwt" });
+  });
+
+  it("propagates auth failures from the Vero session", async () => {
+    const error = Object.assign(new Error("Not authenticated"), {
+      status: 401,
     });
+    mockWithVeroAuth.mockRejectedValue(error);
 
-    const [first, second] = await Promise.all([
-      ensureFreshSession(),
-      ensureFreshSession(),
-    ]);
-
-    expect(first).toBe("refreshed");
-    expect(second).toBe("refreshed");
-    expect(mockClient.auth.refresh).toHaveBeenCalledTimes(1);
-  });
-
-  it("recovers a refresh-only session after the access cookie expires", async () => {
-    mockCookieState.access = undefined;
-    mockClient.auth.refresh.mockResolvedValueOnce({
-      token: "new-jwt",
-      refresh_token: "rt-2",
-    });
-
-    const state = await ensureFreshSession();
-
-    expect(state).toBe("refreshed");
-    expect(mockCookieState.access).toBe("new-jwt");
-    expect(mockCookieState.refresh).toBe("rt-2");
+    await expect(withAuthRefresh(vi.fn())).rejects.toBe(error);
   });
 });

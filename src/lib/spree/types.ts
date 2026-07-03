@@ -5,8 +5,6 @@ export interface SpreeNextConfig {
   publishableKey: string;
   /** Cookie name for the cart order token (default: '_spree_cart_token') */
   cartCookieName?: string;
-  /** Cookie name for the JWT access token (default: '_spree_jwt') */
-  accessTokenCookieName?: string;
   /** Cookie name for country (default: 'spree_country') */
   countryCookieName?: string;
   /** Cookie name for locale (default: 'spree_locale') */

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useVeroAuth } from "@/contexts/VeroAuthContext";
 import { AccountShell } from "./AccountShell";
 
 function SessionFallback() {
@@ -42,7 +42,7 @@ export function AuthenticatedAccountShell({
   loginHref,
 }: AuthenticatedAccountShellProps) {
   const router = useRouter();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading } = useVeroAuth();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) router.replace(loginHref);

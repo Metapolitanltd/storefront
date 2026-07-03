@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
+import { useVeroAuth } from "@/contexts/VeroAuthContext";
 
 interface WholesaleApplicationPendingProps {
   basePath: string;
@@ -30,7 +30,7 @@ export function WholesaleApplicationPending({
   email,
 }: WholesaleApplicationPendingProps) {
   const t = useTranslations("wholesale");
-  const { logout } = useAuth();
+  const { logout } = useVeroAuth();
 
   return (
     <div className="mx-auto max-w-xl px-4 py-16 sm:px-6 lg:px-8">

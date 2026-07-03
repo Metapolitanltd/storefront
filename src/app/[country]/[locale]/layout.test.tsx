@@ -33,8 +33,8 @@ vi.mock("@/components/layout/DocumentShell", () => ({
 vi.mock("@/components/cart/CartDrawer", () => ({ CartDrawer: () => null }));
 vi.mock("@/components/seo/JsonLd", () => ({ JsonLd: () => null }));
 vi.mock("@/components/ui/sonner", () => ({ Toaster: () => null }));
-vi.mock("@/contexts/AuthContext", () => ({
-  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+vi.mock("@/contexts/VeroAuthContext", () => ({
+  VeroAuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 vi.mock("@/contexts/CartContext", () => ({
   CartProvider: ({ children }: { children: React.ReactNode }) => children,
