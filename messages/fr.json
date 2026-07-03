@@ -332,7 +332,8 @@
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
     "forgotPassword": "Mot de passe oublie ?",
-    "policyConsentRequired": "Vous devez accepter les politiques du magasin pour creer un compte"
+    "policyConsentRequired": "Vous devez accepter les politiques du magasin pour creer un compte",
+    "signInError": "Échec de la connexion. Veuillez réessayer."
   },
   "register": {
     "createAccount": "Creer un compte",
@@ -454,7 +455,9 @@
     "accountId": "ID du compte",
     "loadingProfile": "Chargement du profil...",
     "failedToUpdate": "Echec de la mise a jour du profil",
-    "email": "E-mail"
+    "email": "E-mail",
+    "name": "Nom",
+    "managedByVero": "Votre profil est géré via votre compte Vero."
   },
   "creditCards": {
     "paymentMethods": "Modes de paiement",

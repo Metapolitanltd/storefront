@@ -332,7 +332,8 @@
     "showPassword": "Mostrar contrasena",
     "hidePassword": "Ocultar contrasena",
     "forgotPassword": "¿Olvidaste tu contrasena?",
-    "policyConsentRequired": "Debes aceptar las politicas de la tienda para crear una cuenta"
+    "policyConsentRequired": "Debes aceptar las politicas de la tienda para crear una cuenta",
+    "signInError": "Error al iniciar sesión. Inténtalo de nuevo."
   },
   "register": {
     "createAccount": "Crear cuenta",
@@ -454,7 +455,9 @@
     "accountId": "ID de cuenta",
     "loadingProfile": "Cargando perfil...",
     "failedToUpdate": "Error al actualizar el perfil",
-    "email": "Correo electronico"
+    "email": "Correo electronico",
+    "name": "Nombre",
+    "managedByVero": "Tu perfil se gestiona a través de tu cuenta de Vero."
   },
   "creditCards": {
     "paymentMethods": "Metodos de pago",

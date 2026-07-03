@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { StoreProvider } from "@/contexts/StoreContext";
+import { VeroAuthProvider } from "@/contexts/VeroAuthContext";
 import {
   DEFAULT_LOCALE,
   loadMessages,
@@ -199,12 +200,14 @@ function CountryLocaleProviders({
         initialMarkets={markets}
       >
         <AuthProvider>
-          <CartProvider>
-            <JsonLd data={buildOrganizationJsonLd()} />
-            {children}
-            <CartDrawer />
-            <Toaster />
-          </CartProvider>
+          <VeroAuthProvider>
+            <CartProvider>
+              <JsonLd data={buildOrganizationJsonLd()} />
+              {children}
+              <CartDrawer />
+              <Toaster />
+            </CartProvider>
+          </VeroAuthProvider>
         </AuthProvider>
       </StoreProvider>
     </NextIntlClientProvider>
