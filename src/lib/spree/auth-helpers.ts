@@ -62,7 +62,7 @@ export async function withAuthRefresh<T>(
     return await fn(options);
   } catch (error: unknown) {
     // If 401, try refreshing the token using the refresh token
-    if (error instanceof SpreeError && error.status === 401) {
+    if (error instanceof SpreeError && (error as SpreeError).status === 401) {
       const newToken = await tryRefresh();
       if (newToken) {
         return await fn({ token: newToken });
