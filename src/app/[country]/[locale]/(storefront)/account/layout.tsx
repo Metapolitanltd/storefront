@@ -16,6 +16,8 @@ import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useVeroAuth } from "@/contexts/VeroAuthContext";
+import { isVeroAuth } from "@/lib/auth-provider";
 import { extractBasePath } from "@/lib/utils/path";
 
 function getNavItems(t: ReturnType<typeof useTranslations<"account">>): {
@@ -151,7 +153,13 @@ export default function AccountLayout({
   const pathname = usePathname();
   const router = useRouter();
   const basePath = extractBasePath(pathname);
-  const { user, logout, isAuthenticated, loading } = useAuth();
+  // Both providers are always mounted; select the active one by flag. Hooks are
+  // called unconditionally to satisfy the rules of hooks.
+  const veroAuth = useVeroAuth();
+  const spreeAuth = useAuth();
+  const { user, logout, isAuthenticated, loading } = isVeroAuth()
+    ? veroAuth
+    : spreeAuth;
 
   // Pages that don't require authentication
   const authPagePaths = new Set([

@@ -311,7 +311,8 @@
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "forgotPassword": "Forgot password?",
-    "policyConsentRequired": "You must agree to the store policies to create an account"
+    "policyConsentRequired": "You must agree to the store policies to create an account",
+    "signInError": "Sign-in failed. Please try again."
   },
   "register": {
     "createAccount": "Create Account",
@@ -433,7 +434,9 @@
     "accountId": "Account ID",
     "loadingProfile": "Loading profile...",
     "failedToUpdate": "Failed to update profile",
-    "email": "Email"
+    "email": "Email",
+    "name": "Name",
+    "managedByVero": "Your profile is managed through your Vero account."
   },
   "creditCards": {
     "paymentMethods": "Payment Methods",

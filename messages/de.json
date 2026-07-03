@@ -311,7 +311,8 @@
     "showPassword": "Passwort anzeigen",
     "hidePassword": "Passwort verbergen",
     "forgotPassword": "Passwort vergessen?",
-    "policyConsentRequired": "Sie müssen den Geschäftsrichtlinien zustimmen, um ein Konto zu erstellen"
+    "policyConsentRequired": "Sie müssen den Geschäftsrichtlinien zustimmen, um ein Konto zu erstellen",
+    "signInError": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut."
   },
   "register": {
     "createAccount": "Konto erstellen",
@@ -433,7 +434,9 @@
     "accountId": "Konto-ID",
     "loadingProfile": "Profil wird geladen...",
     "failedToUpdate": "Profil konnte nicht aktualisiert werden",
-    "email": "E-Mail"
+    "email": "E-Mail",
+    "name": "Name",
+    "managedByVero": "Ihr Profil wird über Ihr Vero-Konto verwaltet."
   },
   "creditCards": {
     "paymentMethods": "Zahlungsmethoden",

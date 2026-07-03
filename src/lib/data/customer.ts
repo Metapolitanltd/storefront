@@ -51,6 +51,9 @@ async function finalizeAuth(token: string, refreshToken: string) {
 export async function getCustomer(): Promise<Customer | null> {
   const token = await getAccessToken();
   if (!token) return null;
+  console.log(
+    `[spree-auth-diag] getCustomer() — access token …${token.slice(-6)}`,
+  );
 
   try {
     return await withAuthRefresh(async (options) => {
