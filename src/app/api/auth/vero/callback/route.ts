@@ -2,6 +2,7 @@ import { updateTag } from "next/cache";
 import { type NextRequest, NextResponse } from "next/server";
 import { associateGuestCart } from "@/lib/data/cart";
 import { exchangeCode } from "@/lib/vero/client";
+import { getSiteUrl } from "@/lib/vero/config";
 import { verifyVeroJwt } from "@/lib/vero/jwks";
 import { consumeReturnTo, establishVeroSession } from "@/lib/vero/session";
 
@@ -11,13 +12,33 @@ const UUID_RE =
 const DEFAULT_COUNTRY = process.env.NEXT_PUBLIC_DEFAULT_COUNTRY ?? "us";
 const DEFAULT_LOCALE = process.env.NEXT_PUBLIC_DEFAULT_LOCALE ?? "en";
 
+/**
+ * Public origin to build browser redirects against. Behind a proxy `request.url`
+ * is the internal bind address (e.g. `0.0.0.0:3001`), so `new URL(path, request.url)`
+ * would redirect the user there. Prefer the configured canonical SITE_URL, then
+ * the proxy's forwarded host, and only fall back to the request origin. Mirrors
+ * the login route's origin resolution.
+ */
+function siteOrigin(request: NextRequest): string {
+  const configured = getSiteUrl();
+  if (configured) return configured;
+
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  if (forwardedHost) {
+    const proto = request.headers.get("x-forwarded-proto") ?? "https";
+    return `${proto}://${forwardedHost}`;
+  }
+
+  return request.nextUrl.origin;
+}
+
 /** Locale-aware account URL, derived from the proxy-set locale cookies. */
 function accountFallback(request: NextRequest, error?: string): URL {
   const country =
     request.cookies.get("spree_country")?.value ?? DEFAULT_COUNTRY;
   const locale = request.cookies.get("spree_locale")?.value ?? DEFAULT_LOCALE;
   const suffix = error ? `?error=${error}` : "";
-  return new URL(`/${country}/${locale}/account${suffix}`, request.url);
+  return new URL(`/${country}/${locale}/account${suffix}`, siteOrigin(request));
 }
 
 /**
@@ -48,7 +69,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const returnTo = await consumeReturnTo();
     const destination = returnTo
-      ? new URL(returnTo, request.url)
+      ? new URL(returnTo, siteOrigin(request))
       : accountFallback(request);
     return NextResponse.redirect(destination);
   } catch {
