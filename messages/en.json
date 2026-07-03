@@ -536,6 +536,9 @@
     "noVendors": "No vendors found",
     "products": "Products",
     "noProducts": "This vendor hasn't listed any products yet",
-    "backToVendors": "All vendors"
+    "backToVendors": "All vendors",
+    "vendorCount": "{count, plural, one {# vendor} other {# vendors}}",
+    "loadingMore": "Loading more...",
+    "noMoreVendors": "No more vendors to load"
   }
 }

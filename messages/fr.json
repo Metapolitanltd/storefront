@@ -536,6 +536,9 @@
     "noVendors": "Aucun vendeur trouvé",
     "products": "Produits",
     "noProducts": "Ce vendeur n'a encore publié aucun produit",
-    "backToVendors": "Tous les vendeurs"
+    "backToVendors": "Tous les vendeurs",
+    "vendorCount": "{count, plural, one {# vendeur} other {# vendeurs}}",
+    "loadingMore": "Chargement...",
+    "noMoreVendors": "Plus de vendeurs a charger"
   }
 }
