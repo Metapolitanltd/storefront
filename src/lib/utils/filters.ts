@@ -29,6 +29,8 @@ const SORT_KEY_TO_MESSAGE: Record<string, string> = {
   "-price": "priceHighLow",
   "-available_on": "newest",
   available_on: "oldest",
+  "-created_at": "newest",
+  created_at: "oldest",
   name: "nameAZ",
   "-name": "nameZA",
 };
@@ -56,6 +58,8 @@ const SORT_FALLBACK: Record<string, string> = {
   "-price": "Price (high-low)",
   "-available_on": "Newest",
   available_on: "Oldest",
+  "-created_at": "Newest",
+  created_at: "Oldest",
   name: "Name (A-Z)",
   "-name": "Name (Z-A)",
 };

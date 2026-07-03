@@ -536,6 +536,9 @@
     "noVendors": "Nie znaleziono sprzedawców",
     "products": "Produkty",
     "noProducts": "Ten sprzedawca nie dodał jeszcze żadnych produktów",
-    "backToVendors": "Wszyscy sprzedawcy"
+    "backToVendors": "Wszyscy sprzedawcy",
+    "vendorCount": "{count, plural, =0 {0 sprzedawców} one {# sprzedawca} few {# sprzedawcy} many {# sprzedawców} other {# sprzedawców}}",
+    "loadingMore": "Ładowanie kolejnych...",
+    "noMoreVendors": "Brak kolejnych sprzedawców"
   }
 }

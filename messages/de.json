@@ -536,6 +536,9 @@
     "noVendors": "Keine Anbieter gefunden",
     "products": "Produkte",
     "noProducts": "Dieser Anbieter hat noch keine Produkte gelistet",
-    "backToVendors": "Alle Anbieter"
+    "backToVendors": "Alle Anbieter",
+    "vendorCount": "{count, plural, one {# Anbieter} other {# Anbieter}}",
+    "loadingMore": "Weitere werden geladen...",
+    "noMoreVendors": "Keine weiteren Anbieter zum Laden"
   }
 }
