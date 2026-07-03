@@ -49,13 +49,28 @@ export interface Vendor {
   returns_address: VendorAddress | null;
 }
 
-/** Vendors are few and change rarely, so we fetch a generous page. */
-const VENDOR_LIST_LIMIT = 50;
+/** Default page size — matches the product listing (PAGE_SIZE). */
+const VENDOR_PAGE_SIZE = 12;
+
+/**
+ * List params accepted by the vendors endpoint. It supports `page`/`limit`
+ * pagination and a `sort` field (e.g. 'name', '-name', 'created_at',
+ * '-created_at'). It does NOT support Ransack `q[...]` predicates or
+ * free-text search — see the vendor list page.
+ */
+export interface VendorListParams {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  /** Passthrough for any other query param the endpoint accepts. */
+  [key: string]: string | number | undefined;
+}
 
 /**
  * Cached vendor list fetch. Cache key is derived from all function
  * arguments by Next.js "use cache":
  *
+ * - params (page/limit/sort): the requested slice + ordering.
  * - locale/country: translated content + market resolution (sent as
  *   x-spree-* headers by the SDK request layer).
  *
@@ -63,7 +78,7 @@ const VENDOR_LIST_LIMIT = 50;
  * shopper, so guests and authenticated users share one entry.
  */
 async function cachedListVendors(
-  params: { page?: number; limit?: number },
+  params: VendorListParams,
   options: { locale?: string; country?: string },
 ) {
   "use cache: remote";
@@ -75,12 +90,11 @@ async function cachedListVendors(
   });
 }
 
-export async function getVendors(params?: {
-  page?: number;
-  limit?: number;
-}): Promise<PaginatedResponse<Vendor>> {
+export async function getVendors(
+  params?: VendorListParams,
+): Promise<PaginatedResponse<Vendor>> {
   const options = await getLocaleOptions();
-  return cachedListVendors({ limit: VENDOR_LIST_LIMIT, ...params }, options);
+  return cachedListVendors({ limit: VENDOR_PAGE_SIZE, ...params }, options);
 }
 
 /** Cached vendor detail fetch (metadata only — products are fetched separately). */
