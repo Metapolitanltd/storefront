@@ -140,6 +140,21 @@ jobs:
             SENTRY_DSN=${{ secrets.SENTRY_DSN }}
             SENTRY_ORG=${{ secrets.SENTRY_ORG }}
             SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
+            NEXT_PUBLIC_VERO_AUTH_CB=${{ vars.NEXT_PUBLIC_VERO_AUTH_CB }}
+            NEXT_PUBLIC_VERO_BASE_URL=${{ vars.NEXT_PUBLIC_VERO_BASE_URL }}
+            NEXT_PUBLIC_DEFAULT_COUNTRY=${{ vars.NEXT_PUBLIC_DEFAULT_COUNTRY }}
+            NEXT_PUBLIC_DEFAULT_LOCALE=${{ vars.NEXT_PUBLIC_DEFAULT_LOCALE }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_STORE_NAME=${{ vars.NEXT_PUBLIC_STORE_NAME }}
+            NEXT_PUBLIC_STORE_DESCRIPTION=${{ vars.NEXT_PUBLIC_STORE_DESCRIPTION }}
+            STORE_SEO_TITLE=${{ vars.STORE_SEO_TITLE }}
+            STORE_META_DESCRIPTION=${{ vars.STORE_META_DESCRIPTION }}
+            STORE_META_KEYWORDS=${{ vars.STORE_META_KEYWORDS }}
+            STORE_TWITTER=${{ vars.STORE_TWITTER }}
+            STORE_FACEBOOK=${{ vars.STORE_FACEBOOK }}
+            STORE_INSTAGRAM=${{ vars.STORE_INSTAGRAM }}
+            STORE_LOGO_URL=${{ vars.STORE_LOGO_URL }}
+            STORE_SUPPORT_EMAIL=${{ vars.STORE_SUPPORT_EMAIL }}
           secrets: |
             sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ steps.set-tag.outputs.ecr_repository }}:buildcache
