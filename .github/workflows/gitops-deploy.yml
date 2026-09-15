@@ -137,6 +137,7 @@ jobs:
           build-args: |
             SPREE_API_URL=${{ secrets.SPREE_API_URL }}
             SPREE_PUBLISHABLE_KEY=${{ secrets.SPREE_PUBLISHABLE_KEY }}
+            SPREE_IMAGES_URL=${{ vars.SPREE_IMAGES_URL || secrets.SPREE_IMAGES_URL }}
             SENTRY_DSN=${{ secrets.SENTRY_DSN }}
             SENTRY_ORG=${{ secrets.SENTRY_ORG }}
             SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}

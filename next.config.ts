@@ -78,12 +78,17 @@ const nextConfig: NextConfig = {
       // Hosted demo / tunnel backends whose image host differs from SPREE_API_URL.
       {
         protocol: "https",
-        hostname: "spree-web-nz3i.onrender.com",
+        hostname: "**.vendo.dev",
         pathname: "/rails/active_storage/**",
       },
       {
         protocol: "https",
-        hostname: "qa-spree-web.onrender.com",
+        hostname: "**.spree.sh",
+        pathname: "/rails/active_storage/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.trycloudflare.com",
         pathname: "/rails/active_storage/**",
       },
     ],

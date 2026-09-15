@@ -54,8 +54,13 @@ ENV NODE_ENV=production
 # that fetch from Spree (categories, products, etc.).
 ARG SPREE_API_URL
 ARG SPREE_PUBLISHABLE_KEY
+# Optional image host override (e.g. a CDN in front of Active Storage).
+# next.config.ts bakes the allowed image hosts into the build — from
+# SPREE_IMAGES_URL, else SPREE_API_URL — so it only takes effect when set here.
+ARG SPREE_IMAGES_URL=""
 ENV SPREE_API_URL=$SPREE_API_URL \
-    SPREE_PUBLISHABLE_KEY=$SPREE_PUBLISHABLE_KEY
+    SPREE_PUBLISHABLE_KEY=$SPREE_PUBLISHABLE_KEY \
+    SPREE_IMAGES_URL=$SPREE_IMAGES_URL
 
 # Optional Sentry release/source-map upload. When SENTRY_DSN is empty,
 # next.config.ts skips withSentryConfig entirely, so the build still works.
